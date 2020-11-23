@@ -190,7 +190,7 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
+          InkWell(
             onTap: () {
               rd.setUserId(AppState.userId);
             },
