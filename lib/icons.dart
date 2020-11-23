@@ -44,6 +44,10 @@ class UniconsLine {
   static const IconData linkAdd = IconData(0xec57, fontFamily: fontFamily);
 
   static const IconData smile = IconData(0xe863, fontFamily: fontFamily);
+
+  static const IconData user = IconData(0xea0d, fontFamily: fontFamily);
+
+  static const IconData estate = IconData(0xeca5, fontFamily: fontFamily);
 }
 
 class UniconsSolid {

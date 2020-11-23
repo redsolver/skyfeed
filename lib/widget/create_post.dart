@@ -190,25 +190,30 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: borderRadius,
-            child: UserBuilder(
-              userId: AppState.userId,
-              callback: (user) {
-                if (user == null)
-                  return SizedBox(
-                    height: 48,
-                    width: 48,
-                  );
+          GestureDetector(
+            onTap: () {
+              rd.setUserId(AppState.userId);
+            },
+            child: ClipRRect(
+              borderRadius: borderRadius,
+              child: UserBuilder(
+                userId: AppState.userId,
+                callback: (user) {
+                  if (user == null)
+                    return SizedBox(
+                      height: 48,
+                      width: 48,
+                    );
 
-                return Image.network(
-                  resolveSkylink(
-                    user.picture,
-                  ),
-                  width: 48,
-                  height: 48,
-                );
-              },
+                  return Image.network(
+                    resolveSkylink(
+                      user.picture,
+                    ),
+                    width: 48,
+                    height: 48,
+                  );
+                },
+              ),
             ),
           ),
           SizedBox(

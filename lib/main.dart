@@ -14,6 +14,7 @@ import 'package:app/widget/create_post.dart';
 import 'package:app/widget/discover.dart';
 import 'package:app/widget/login_hint.dart';
 import 'package:app/widget/logo.dart';
+import 'package:app/widget/navigation_item.dart';
 import 'package:app/widget/notifications.dart';
 import 'package:app/widget/post.dart';
 import 'package:app/widget/sky_button.dart';
@@ -76,7 +77,6 @@ void main() async {
 
   print('main() 1 ${DateTime.now()}');
 
-
   ws.connect();
 
   if (dataBox.containsKey('login')) {
@@ -129,8 +129,6 @@ void main() async {
         dp.saved = (await cacheBox.get('saved')).cast<String, Map>();
       }
     }
-
- 
   }
 
   print('main() } ${DateTime.now()}');
@@ -208,7 +206,6 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
     history.last.scrollCache = position;
   }
 
-
   SkyRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
   SkyRoutePath get currentConfiguration {
     if (show404) {
@@ -268,14 +265,11 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
     return Navigator(
       key: navigatorKey,
       pages: [
-      
         MaterialPage(
           key: ValueKey('home'),
           child: HomePage(),
         ),
-    
         if (isMobile) ..._buildMobilePages(),
-
       ],
       onPopPage: (route, result) {
         print('onPopPage');
@@ -332,8 +326,6 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
 
     return pages;
   }
-
-
 
   void pop() {
     if (history.length > 1) {
@@ -608,18 +600,15 @@ class SkyRouteInformationParser extends RouteInformationParser<SkyRoutePath> {
 }
 
 class _SkyFeedAppState extends State<SkyFeedApp> {
-
   @override
   void initState() {
     super.initState();
     rd = SkyRouterDelegate();
     routeInformationParser = SkyRouteInformationParser();
-
   }
 
   @override
   Widget build(BuildContext context) {
-
     return ValueListenableBuilder<ThemeModel>(
       valueListenable: rd.themeNotifier,
       builder: (_, model, __) {
@@ -638,8 +627,6 @@ class _SkyFeedAppState extends State<SkyFeedApp> {
     );
   }
 }
-
-
 
 class HomePage extends StatefulWidget {
   @override
@@ -666,7 +653,6 @@ class _HomePageState extends State<HomePage> {
     final width = MediaQuery.of(context).size.width;
 
     final useBigFeedPadding = width > 1500;
-
 
     return Scaffold(
       body: Column(
@@ -743,7 +729,6 @@ class _HomePageState extends State<HomePage> {
                         final result = await AuthService.login(context);
 
                         if (result.eventCode == 'login_success') {
-
                           AppState.skynetUser =
                               SkynetUser.fromSeed(result.seed);
                           AppState.userId = result.userId;
@@ -832,7 +817,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     PopupMenuItem(
                       child: Text(
-                        'Version Beta 0.4.1',
+                        'Version Beta 0.4.2',
                         style: TextStyle(
                           fontStyle: FontStyle.italic,
                         ),
@@ -906,6 +891,27 @@ class _HomePageState extends State<HomePage> {
                                 ContextPage(),
                                 SizedBox(
                                   height: 32,
+                                ),
+                              ],
+                              if (AppState.isLoggedIn) ...[
+                                NavigationItem(
+                                  onTap: () {
+                                    rd.setHomePage();
+                                  },
+                                  icon: UniconsLine.estate,
+                                  label: 'Overview',
+                                  color: SkyColors.follow,
+                                ),
+                                SizedBox(
+                                  height: 16,
+                                ),
+                                NavigationItem(
+                                  onTap: () {
+                                    rd.setUserId(AppState.userId);
+                                  },
+                                  icon: UniconsLine.user,
+                                  label: 'My profile',
+                                  color: SkyColors.red,
                                 ),
                               ],
                               NotificationsWidget(),
@@ -1173,7 +1179,6 @@ class _FeedPageState extends State<FeedPage> {
 
         posts = [
           await dp.getPost('${widget.userId}/feed/${widget.postId}'),
-       
         ];
 
         setState(() {});
@@ -1445,8 +1450,6 @@ class _FeedPageState extends State<FeedPage> {
             showComments: isCommentView,
             key: ValueKey(p),
           );
-
-        
         },
         separatorBuilder: (context, index) {
           if (isMobile) {
