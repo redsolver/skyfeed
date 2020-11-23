@@ -14,7 +14,7 @@ iOS App: *soon*
 
 ## Design
 
-Check out the design concept for SkyFeed: https://github.com/juliandegraaf/SkyFeed-design
+Check out the design concept for SkyFeed: https://github.com/juliandegraaf/design-skyfeed
 
 It contains some UI designs of features which are not yet implemented.
 
