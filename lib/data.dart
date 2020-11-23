@@ -1266,6 +1266,16 @@ class DataProcesser {
 
   Future<void> logout() async {
     await dataBox.deleteAll(dataBox.keys);
+    await cacheBox.deleteAll(cacheBox.keys);
+    await revisionCache.deleteAll(revisionCache.keys);
+    await users.deleteAll(users.keys);
+    await followingBox.deleteAll(followingBox.keys);
+    await followersBox.deleteAll(followersBox.keys);
+
+
+    await feedPages.deleteAll(feedPages.keys);
+    await commentsIndex.deleteAll(commentsIndex.keys);
+    await pointerBox.deleteAll(pointerBox.keys);
 
 /*     users = await Hive.openBox('users');
     followingBox = await Hive.openLazyBox('following');

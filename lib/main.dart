@@ -817,7 +817,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     PopupMenuItem(
                       child: Text(
-                        'Version Beta 0.4.2',
+                        'Version Beta 0.4.3',
                         style: TextStyle(
                           fontStyle: FontStyle.italic,
                         ),
@@ -912,6 +912,9 @@ class _HomePageState extends State<HomePage> {
                                   icon: UniconsLine.user,
                                   label: 'My profile',
                                   color: SkyColors.red,
+                                ),
+                                SizedBox(
+                                  height: 32,
                                 ),
                               ],
                               NotificationsWidget(),
