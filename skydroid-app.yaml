@@ -1,0 +1,30 @@
+name: SkyFeed Beta
+categories:
+  - Internet
+  - Multimedia
+authorName: redsolver
+packageName: social.skyfeed.app
+
+icon: sia://EADS5NDGkOoEiVfxZ9n5NyesEsLqNbTpBvzHt1Lui8K_Dg
+
+localized:
+  en-US:
+    description: |-
+      TODO
+    summary: Decentralized social network on Skynet
+
+builds:
+  - versionName: 0.4.1
+    versionCode: 41
+    sha256: 70f1bb38297d33b445673bc12a1503f5c1c693c39e380933014730d115bae0fb
+    apkLink: sia://AACiJWln5dlgMM9kaeycKdEAwIoHc7_qpUL_0p9vm78NCg
+  - versionName: 0.4.0
+    versionCode: 40
+    sha256: e76e1f0035f5d7cadce8337cc1ea749c6bb5286104edf7ed696a56ec704b89b1
+    apkLink: sia://AADdlz9pG7AQHdsVfShgwUc2pTEgb8KoruoARb8wLzcpyg
+
+currentVersionName: 0.4.1
+currentVersionCode: 41
+
+added: 1606056265301
+lastUpdated: 1606145342612

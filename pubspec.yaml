@@ -1,0 +1,156 @@
+name: app
+description: A new Flutter project.
+
+# The following line prevents the package from being accidentally published to
+# pub.dev using `pub publish`. This is preferred for private packages.
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+version: 0.4.1+41
+
+environment:
+  sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  url_launcher: ^5.7.8
+  shared_preferences: ^0.5.12+2
+  path_provider: ^1.6.22
+  json_annotation: ^3.1.0
+  hive: ^1.4.4+1
+  hive_flutter: ^0.3.1
+  flutter_blurhash: ^0.5.0
+  blurhash_dart: ^0.2.3
+  flutter_svg: ^0.19.1
+  timeago: ^2.0.27
+  chewie: ^0.9.10
+  just_audio: ^0.5.6
+  emojis: ^0.9.3
+  file_picker: ^2.1.0
+  # file_picker_cross: ^4.2.6
+  flutter_link_preview: ^1.5.6
+  flutter_markdown: ^0.5.0
+  scrollable_positioned_list: ^0.1.8
+  badges: ^1.1.4
+  flutter_barcode_scanner: ^1.0.1
+
+  skynet:
+    path: ../skynet
+  mime: ^0.9.7
+  image: ^2.1.18
+  cryptography: ^1.4.1
+  convert: ^2.1.1
+  flutter_spinkit: ^4.1.2+1
+
+  # riverpod: ^0.12.1
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  hive_generator: ^0.8.1
+  build_runner: ^1.10.4
+  json_serializable: ^3.5.0
+  flutter_launcher_icons: ^0.8.1
+
+dependency_overrides:
+  video_player:
+    path: ../../cov/plugins/packages/video_player/video_player
+  video_player_web:
+    path: ../../cov/plugins/packages/video_player/video_player_web
+
+
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path_android: "assets/icon/icon.png"
+  image_path_ios: "assets/icon/icon_ios.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/icon/adaptive_icon.png"
+
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+# The following section is specific to Flutter.
+flutter:
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/logo-skyfeed.png
+  #   - images/a_dot_ham.jpeg
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/assets-and-images/#resolution-aware.
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/assets-and-images/#from-packages
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  fonts:
+    #    - family: OpenMoji
+    #      fonts:
+    #        - asset: assets/font/OpenMoji-Color.ttf
+    #    - family: EmojiOne # TODO Check license (Only embed Noto Font for Desktop?)
+    #      fonts:
+    #        - asset: assets/font/emojione-android.ttf
+    - family: UniconsLine
+      fonts:
+        - asset: assets/font/UniconsLine.ttf
+    - family: UniconsSolid
+      fonts:
+        - asset: assets/font/UniconsSolid.ttf
+    - family: Roboto
+      fonts:
+        - asset: assets/font/Roboto/Roboto-Thin.ttf
+          weight: 100
+        - asset: assets/font/Roboto/Roboto-ThinItalic.ttf
+          weight: 100
+          style: italic
+        - asset: assets/font/Roboto/Roboto-Light.ttf
+          weight: 300
+        - asset: assets/font/Roboto/Roboto-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/font/Roboto/Roboto-Regular.ttf
+          weight: 400
+        - asset: assets/font/Roboto/Roboto-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/font/Roboto/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/font/Roboto/Roboto-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/font/Roboto/Roboto-Bold.ttf
+          weight: 700
+        - asset: assets/font/Roboto/Roboto-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/font/Roboto/Roboto-Black.ttf
+          weight: 900
+        - asset: assets/font/Roboto/Roboto-BlackItalic.ttf
+          weight: 900
+          style: italic
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/custom-fonts/#from-packages
