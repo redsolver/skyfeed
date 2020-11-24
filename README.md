@@ -12,6 +12,14 @@ Android App: https://to.skydroid.app/skyfeed.redsolver
 
 iOS App: *soon*
 
+## Video Demo
+
+https://siasky.net/AADw-AkwVFjCytyx7cSGHRqopEt7fJtKlHa-mc38oRpVVw
+
+## Mobile App Screenshots
+
+
+
 ## Design
 
 Check out the design concept for SkyFeed: https://github.com/juliandegraaf/design-skyfeed
