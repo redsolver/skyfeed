@@ -12,6 +12,19 @@ Android App: https://to.skydroid.app/skyfeed.redsolver
 
 iOS App: *soon*
 
+## Video Demo
+
+https://siasky.net/AADw-AkwVFjCytyx7cSGHRqopEt7fJtKlHa-mc38oRpVVw
+
+## Mobile App Screenshots
+
+<p>
+  <img src="https://siasky.net/fADnTDIU-5MefZm4euxjhT0ti2zBluPPZ9f0l9JXE9q7Bg" width="250">
+  <img src="https://siasky.net/fACF-TXvpNoprJr9ix6Lk4h9O83puKpvdcOkhfAWJ1OrkA" width="250">
+  <img src="https://siasky.net/vAKfnEw6qYwa033x39vJWqmdrw2vYeVCjhRb_bVDr36SrQ" width="250">
+</p>
+
+
 ## Design
 
 Check out the design concept for SkyFeed: https://github.com/juliandegraaf/design-skyfeed
