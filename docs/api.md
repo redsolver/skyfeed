@@ -28,7 +28,7 @@ Example:
 ```
 
 SkyFeed uses the `posts` feed for posts and reposts which appear on the home and user page. The `comments` feed is used for comments.
-Both feeds are organized using pages and everytime a single page fills up with 16 posts, a new page is created. The `position` in the `skyfeed-user` shows you what the current page so you can directly load the latest content. If you want to get all content, the page index starts at `0` and goes `+1` on every new page.
+Both feeds are organized using pages and everytime a single page fills up with 16 posts, a new page is created. The `position` in the `skyfeed-user` shows you what the current page is so you can directly load the latest content. If you want to get all content, the page index starts at `0` and goes `+1` on every new page.
 
 
 5. Fetch followers and users being followed by a user using `skyfeed-following` and `skyfeed-followers`
@@ -42,7 +42,7 @@ Example for `skyfeed-followers`:
    "d873ca08a7ffe36a8b19fa5d82cb34cfad70d2f0b3d5b1f2448a2054703e36d4":{}
 }
 ```
-The keys of this map are the user ids of people following/being followed.
+The keys of this map are the user ids of people following/being followed (**These ids are NOT skyfeed public keys, they are Sky ID user ids! You need to fetch their `profile` like in 1. to get their skyfeed public key and load their skyfeed data!**).
 
 6. Fetch a feed page using `skyfeed-feed/FEEDNAME/INDEX`
 `FEEDNAME` can be `posts` or `comments`.
