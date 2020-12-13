@@ -25,6 +25,8 @@ LazyBox feedPages;
 
 LazyBox commentsIndex;
 
+LazyBox reactionsBox;
+
 Box pointerBox;
 
 Box dataBox;

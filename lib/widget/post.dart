@@ -3,11 +3,15 @@ import 'package:app/model/post.dart';
 import 'package:app/state.dart';
 import 'package:app/utils/parse_md.dart';
 import 'package:app/widget/comments.dart';
+import 'package:app/widget/custom_popup_menu.dart';
+import 'package:app/widget/emoji_popup_menu.dart';
+import 'package:app/widget/emoji_reaction.dart';
 import 'package:app/widget/link.dart';
 import 'package:app/widget/video/play_button.dart';
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -185,6 +189,8 @@ class _PostWidgetState extends State<PostWidget> {
   bool _isSaving = false;
 
   bool _isDeleted = false;
+
+  final _emojiPopupController = CustomPopupMenuController();
 
   @override
   Widget build(BuildContext context) {
@@ -481,15 +487,21 @@ class _PostWidgetState extends State<PostWidget> {
 
                               // extensionSet: md.ExtensionSet.gitHubFlavored,
                             ), */
+                                //Listener(
+                                /* onPointerSignal: (event) {
+                                print(event);
+                              }, */
+
                                 SelectableText(
                               post.content.text.truncateTo(1024),
+                              // scrollPhysics: NeverScrollableScrollPhysics(),
 
                               //'A decentralized Twitter/Reddit/Facebook/Instagram in one? But packed with powerful tools like Skynet Send? Yes it’s possible. Stay tuned. 😀  👩🏼‍🚒 👮🏼 👮🏼‍♂️ 👮🏼‍♀️ 🕵🏼 🕵🏼‍♂️ 🕵🏼‍♀️ 💂🏼 💂🏼‍♂️ 💂🏼‍♀️ 👷🏼 👷🏼‍♂️ 👷🏼‍♀️ 🤴🏼 👸🏼 👳🏼 👳🏼‍♂️', //
                               style: TextStyle(
                                 height: 1.4,
                                 /* fontFamilyFallback: [
-                                  'Twitter Color Emoji',
-                                ], */
+                                    'Twitter Color Emoji',
+                                  ], */
 
                                 //color: Colors.black,
                               ),
@@ -776,10 +788,72 @@ class _PostWidgetState extends State<PostWidget> {
                               ? 6
                               : 4,
                         ),
+                        StreamBuilder<Map<String, List<String>>>(
+                          stream: dp.getReactionsStream(fullPostId),
+                          builder: (context, snapshot) {
+                            final data = snapshot.data;
+
+                            if (data == null) return SizedBox();
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 6.0),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 4,
+                                  ),
+                                  for (final key in data.keys)
+                                    EmojiReactionWidget(
+                                      key,
+                                      data[key].length,
+                                      data[key].contains(AppState.userId),
+                                      onAdd: () {
+                                        //print('onAdd $key');
+                                        dp.addReaction(fullPostId, key);
+                                      },
+                                      onRemove: () {
+                                        //print('onRemove $key');
+                                        dp.removeReaction(fullPostId, key);
+                                      },
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                         Padding(
                           padding: EdgeInsets.only(left: leftContentIndent - 8),
                           child: Row(
                             children: [
+                              if (AppState.isLoggedIn) ...[
+                                InkWell(
+                                  borderRadius: borderRadius,
+                                  onTap: () async {},
+                                  child: CustomPopupMenu(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Icon(
+                                        UniconsLine.smile,
+                                        size: 16,
+                                        color: SkyColors.darkGrey,
+                                      ),
+                                    ),
+                                    menuBuilder: () => EmojiPopupMenuWidget(
+                                      _emojiPopupController,
+                                      callback: (emoji) {
+                                        print(emoji);
+                                        dp.addReaction(fullPostId, emoji);
+                                      },
+                                    ),
+                                    pressType: PressType.singleClick,
+                                    verticalMargin: -10,
+                                    controller: _emojiPopupController,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 4,
+                                ),
+                              ],
                               InkWell(
                                 borderRadius: borderRadius,
                                 onTap: () {
@@ -796,22 +870,23 @@ class _PostWidgetState extends State<PostWidget> {
                                         color: SkyColors.darkGrey,
                                       ),
                                       StreamBuilder<int>(
-                                          stream: dp.getCommentsCountStream(
-                                              fullPostId),
-                                          builder: (context, snapshot) {
-                                            String str = '  Comment';
+                                        stream: dp
+                                            .getCommentsCountStream(fullPostId),
+                                        builder: (context, snapshot) {
+                                          String str = '  Comment';
 
-                                            if (snapshot.data != null) {
-                                              str = '  ${snapshot.data}' + str;
-                                            }
-                                            return Text(
-                                              str, //'  17  Comment',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: SkyColors.darkGrey,
-                                              ),
-                                            );
-                                          }),
+                                          if (snapshot.data != null) {
+                                            str = '  ${snapshot.data}' + str;
+                                          }
+                                          return Text(
+                                            str, //'  17  Comment',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: SkyColors.darkGrey,
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ],
                                   ),
                                 ),

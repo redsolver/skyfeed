@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:app/app.dart';
@@ -15,10 +16,13 @@ import 'package:skynet/skynet.dart';
 // Every second in Data map
 // Every minute on SkyDB (when changes)
 
+
 const $skyfeedFollowing = 'skyfeed-following';
 const $skyfeedPrivateFollowing = 'skyfeed-following-private';
 
 const $skyfeedFollowers = 'skyfeed-followers';
+
+const $skyfeedReactions = 'skyfeed-reactions';
 
 const $skyfeedSaved = 'skyfeed-saved';
 
@@ -32,6 +36,8 @@ class DataProcesser {
   // Map<String, ItemPosition> scrollCache = {};
 
   log(String path, String msg) {
+    return;
+
     print('$path $msg');
   }
 
@@ -50,6 +56,8 @@ class DataProcesser {
 
   Map<String, Map> following;
   Map<String, Map> followers = {};
+
+  Map<String, List<String>> reactions = {};
 
   Map<String, Map> privateFollowing;
 
@@ -76,6 +84,59 @@ class DataProcesser {
     } else {
       mediaPositions[skylink] = {'position': position};
     }
+  }
+
+  void addReaction(String fullPostId, String reaction) {
+    log('addReaction', '$reaction on $fullPostId');
+/*     print('addReaction');
+    print('current: $reactions'); */
+    // reactions = {};
+
+    if (!reactions.containsKey(fullPostId)) reactions[fullPostId] = <String>[];
+
+    if (!reactions[fullPostId].contains(reaction))
+      reactions[fullPostId].add(reaction);
+
+    final subKey = 'reactions/$fullPostId';
+    if (feedStreams.containsKey(subKey)) {
+      log('addReaction', 'Notify reactions stream');
+      feedStreams[subKey].add(null);
+    }
+
+    _updateReactions();
+  }
+
+  void removeReaction(String fullPostId, String reaction) {
+    if (reactions[fullPostId].contains(reaction))
+      reactions[fullPostId].remove(reaction);
+
+    log('removeReaction', '$reaction on $fullPostId');
+
+    final subKey = 'reactions/$fullPostId';
+    if (feedStreams.containsKey(subKey)) {
+      log('removeReaction', 'Notify reactions stream');
+      feedStreams[subKey].add(null);
+    }
+
+    _updateReactions();
+  }
+
+  int _currentReactionsUpdateCount = 0;
+
+  void _updateReactions() async {
+    _currentReactionsUpdateCount++;
+    final cCount = _currentReactionsUpdateCount;
+
+    await Future.delayed(Duration(seconds: 6));
+    if (cCount != _currentReactionsUpdateCount) return;
+
+    log('update/reactions', '');
+
+    _setFile(
+      utf8.encode(json.encode(reactions)),
+      $skyfeedReactions,
+      revision: /*  reactions.length == 1 ? 0 : */ null, // TODO Do this better
+    );
   }
 
   Future<Set<String>> getSuggestedUsers() async {
@@ -169,7 +230,12 @@ class DataProcesser {
       fp = await feedPages.get(fullFeedPageId);
     }
 
-    final post = fp.items.firstWhere((p) => p.id == pId);
+    final post = fp.items.firstWhere((p) => p.id == pId, orElse: () => null);
+
+    if (post == null) {
+      print('ERROR $fullFeedPageId'); // TODO Error handling
+      return null;
+    }
 
     post.userId = userId;
     post.feedId = '$feed/$feedPageId';
@@ -348,8 +414,6 @@ class DataProcesser {
   }
 
   Set<String> getFollowKeys() {
-
-
     if (AppState.userId == null) return <String>{};
 
     Set<String> keys = {
@@ -392,13 +456,23 @@ class DataProcesser {
     return revisionCache.put('$key', revision);
   }
 
+  bool isFollowingUpdaterRunning = false;
+
+  final random = Random();
+
   void checkFollowingUpdater() async {
+    while (isFollowingUpdaterRunning) {
+      await Future.delayed(Duration(milliseconds: random.nextInt(300)));
+    }
+    isFollowingUpdaterRunning = true;
     /* if (privateFollowing != null) keys.addAll(privateFollowing.keys);
     if (following != null) keys.addAll(following.keys); */
 
-    //print('checkFollowingUpdater ${getFollowKeys()}');
+    final allUserIds = [...getFollowKeys(), ...temporaryKeys];
 
-    for (final mainUserId in [...getFollowKeys(), ...temporaryKeys]) {
+    dp.log('checkFollowingUpdater', 'checkFollowingUpdater for ${allUserIds}');
+
+    for (final mainUserId in allUserIds) {
       // print('checkFollowingUpdater: $mainUserId');
       try {
         //
@@ -408,7 +482,8 @@ class DataProcesser {
         // print('CHECK ID STREAM 2 $mainUserId');
 
         if (initialUser?.skyfeedId == null) {
-          print('Skipping $mainUserId because of no skyfeedId');
+          dp.log('checkFollowingUpdater',
+              'Skipping $mainUserId because of no skyfeedId');
 
           continue;
         }
@@ -434,7 +509,7 @@ class DataProcesser {
             final int currentCommentsPointer =
                 data['feed/comments/position'] ?? 0;
 
-            dp.log('data/watch/feed', 'got $data');
+            // dp.log('data/watch/feed', 'got $data');
 
             // currentPostPointer 3
 
@@ -472,6 +547,8 @@ class DataProcesser {
         final followingKey = Uint8List.fromList(
             [...user.publicKey.bytes, ...hashDatakey($skyfeedFollowing)]);
 
+        // dp.log('data/watch/following', 'watch? $mainUserId');
+
         if (!ws.streams.containsKey(String.fromCharCodes(followingKey))) {
           dp.log('data/watch/following', 'watch+ $mainUserId');
 
@@ -484,6 +561,33 @@ class DataProcesser {
             final data = json.decode(res.asString);
 
             dp.log('data/watch/following', 'got $data');
+
+            if (mainUserId == AppState.userId) {
+              following = data.cast<String, Map>();
+
+              cacheBox.put('following', following);
+
+              if (oldFollowing != null) {
+                for (final oldKey in oldFollowing) {
+                  if (!following.containsKey(oldKey)) {
+                    if (subbedProfiles.containsKey(oldKey))
+                      subbedProfiles[oldKey].add(null);
+                  }
+                }
+
+                for (final key in following.keys) {
+                  if (!oldFollowing.contains(key)) {
+                    if (subbedProfiles.containsKey(key))
+                      subbedProfiles[key].add(null);
+                  }
+                }
+              }
+              oldFollowing = following.keys.toList();
+
+              checkFollowingUpdater();
+
+              onFollowingChange.add(null);
+            }
 
             await followingBox.put(mainUserId, data);
 
@@ -511,6 +615,12 @@ class DataProcesser {
 
             dp.log('data/watch/followers', 'got $data');
 
+            if (mainUserId == AppState.userId) {
+              followers = data.cast<String, Map>();
+
+              cacheBox.put('followers', followers);
+            }
+
             await followersBox.put(mainUserId, data);
 
             if (subbedProfiles.containsKey(mainUserId))
@@ -519,12 +629,59 @@ class DataProcesser {
             setRevisionNumberCache(
                 user.id + '#' + $skyfeedFollowers, event.entry.revision);
           });
+
+          final reactionsKey = Uint8List.fromList(
+              [...user.publicKey.bytes, ...hashDatakey($skyfeedReactions)]);
+
+          if (!ws.streams.containsKey(String.fromCharCodes(reactionsKey))) {
+            dp.log('data/watch/reactions', 'watch+ $mainUserId');
+
+            ws.subscribe(user, $skyfeedReactions).listen((event) async {
+              if (checkRevisionNumberCache(
+                  user.id + '#' + $skyfeedReactions, event.entry.revision))
+                return;
+
+              final res = await ws.downloadFileFromRegistryEntry(event);
+              final Map data = json.decode(res.asString);
+
+              dp.log('data/watch/reactions', 'got $data');
+
+              if (mainUserId == AppState.userId) {
+                // dp.log('data/watch/reactions', 'got AppState.userId $data');
+                reactions = data.cast<String, List>().map<String, List<String>>(
+                    (key, value) => MapEntry(key, value.cast<String>()));
+
+                cacheBox.put('reactions', reactions);
+              }
+
+              for (final String fullPostId in data.keys) {
+                final Map map = (await reactionsBox.get(fullPostId)) ?? {};
+
+                if (!map.containsKey(mainUserId)) {
+                  map[mainUserId] = [];
+                }
+                map[mainUserId] = data[fullPostId];
+
+                reactionsBox.put(fullPostId, map);
+
+                final subKey = 'reactions/$fullPostId';
+
+                if (feedStreams.containsKey(subKey)) {
+                  feedStreams[subKey].add(null);
+                }
+              }
+
+              setRevisionNumberCache(
+                  user.id + '#' + $skyfeedReactions, event.entry.revision);
+            });
+          }
         }
       } catch (e, st) {
-        print(e);
+        print('ERROR ' + e);
         print(st);
       }
     }
+    isFollowingUpdaterRunning = false;
   }
 
   Stream<int> getCommentsCountStream(String fullPostId) async* {
@@ -535,6 +692,44 @@ class DataProcesser {
     await for (final _ in dp.getFeedStream(key: 'comments/${fullPostId}')) {
       yield await getCommentCount(fullPostId, 0);
     }
+  }
+
+  Stream<Map<String, List<String>>> getReactionsStream(
+      String fullPostId) async* {
+/*     print(
+        'getReactionsStream $fullPostId ${await reactionsBox.get(fullPostId)}'); */
+    if (reactionsBox.containsKey(fullPostId)) {
+      yield await getReactions(fullPostId);
+    }
+
+    // reactions/d73c16c364606a83fd93777ad74b21cd32ca11729c8573fe6654973a8308d56c/feed/posts/1/0
+    // reactions/d73c16c364606a83fd93777ad74b21cd32ca11729c8573fe6654973a8308d56c/feed/posts/1/0
+
+    await for (final _ in dp.getFeedStream(key: 'reactions/${fullPostId}')) {
+      yield await getReactions(fullPostId);
+    }
+  }
+
+  Future<Map<String, List<String>>> getReactions(String fullPostId) async {
+    final Map r = await reactionsBox.get(fullPostId);
+    Map<String, List<String>> result = {};
+    for (final userId in r.keys) {
+      if (userId == AppState.userId) continue;
+
+      for (final reaction in r[userId]) {
+        if (!result.containsKey(reaction)) result[reaction] = [];
+        result[reaction].add(userId);
+      }
+    }
+
+    for (final reaction in reactions[fullPostId]) {
+      if (!result.containsKey(reaction)) result[reaction] = [];
+
+      if (!result[reaction].contains(AppState.userId))
+        result[reaction].add(AppState.userId);
+    }
+
+    return result;
   }
 
   Future<int> getCommentCount(String fullPostId, int deepness) async {
@@ -557,7 +752,7 @@ class DataProcesser {
       {String mainUserId, SkynetUser skyfeedUser, String fullFeedPageId}) {
     final currentDatakey = 'skyfeed-feed/$fullFeedPageId';
 
-    print('fullFeedPageId $fullFeedPageId');
+    dp.log('sub/fullFeedPageId', '$fullFeedPageId');
 
     /*        final oldKey = Uint8List.fromList(
                 [...user.publicKey.bytes, ...hashDatakey(oldDatakey)]); */
@@ -580,7 +775,7 @@ class DataProcesser {
         final res = await ws.downloadFileFromRegistryEntry(event);
 
         final data = json.decode(res.asString);
-        dp.log('data/watch/feed/$feedId', 'got $data');
+        // dp.log('data/watch/feed/$feedId', 'got $data');
 
         final feed = Feed.fromJson(data);
 
@@ -595,6 +790,7 @@ class DataProcesser {
 
               if (!list.contains(commentId)) {
                 list.add(commentId);
+
                 await commentsIndex.put(item.commentTo, list);
 
                 final feedKey = 'comments/${item.commentTo}';
@@ -645,7 +841,7 @@ class DataProcesser {
 
   void initAccount() {
     subToProfile(AppState.userId);
-
+/* 
     ws.subscribe(AppState.skynetUser, $skyfeedFollowing).listen((event) async {
       print('got skyfeedFollowing');
 
@@ -657,49 +853,20 @@ class DataProcesser {
 
       //print(res.asString);
 
-      following = json.decode(res.asString).cast<String, Map>();
-      /*    print('oldFollowing $oldFollowing');
-      print('following $following'); */
-
-      cacheBox.put('following', following);
-
-      if (oldFollowing != null) {
-        for (final oldKey in oldFollowing) {
-          if (!following.containsKey(oldKey)) {
-            if (subbedProfiles.containsKey(oldKey))
-              subbedProfiles[oldKey].add(null);
-          }
-        }
-
-        for (final key in following.keys) {
-          if (!oldFollowing.contains(key)) {
-            if (subbedProfiles.containsKey(key)) subbedProfiles[key].add(null);
-          }
-        }
-      }
-      oldFollowing = following.keys.toList();
-
-      checkFollowingUpdater();
-
-      onFollowingChange.add(null);
+    
 
       setRevisionNumberCache(AppState.skynetUser.id + '#' + $skyfeedFollowing,
           event.entry.revision);
-    });
+    }); */
 
-    ws.subscribe(AppState.skynetUser, $skyfeedFollowers).listen((event) async {
+    /* ws.subscribe(AppState.skynetUser, $skyfeedFollowers).listen((event) async {
       print('got skyfeedFollowers');
 
       if (checkRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedFollowers,
           event.entry.revision)) return;
 
-      final res = await ws.downloadFileFromRegistryEntry(event);
-
-      followers = json.decode(res.asString).cast<String, Map>();
-
-      cacheBox.put('followers', followers);
-
+      
 /*       if (oldFollowing != null) {
         for (final oldKey in oldFollowing) {
           if (!following.containsKey(oldKey)) {
@@ -720,7 +887,7 @@ class DataProcesser {
 
       setRevisionNumberCache(AppState.skynetUser.id + '#' + $skyfeedFollowers,
           event.entry.revision);
-    });
+    }); */
 
     ws
         .subscribe(AppState.publicUser, $skyfeedRequestFollow + AppState.userId)
@@ -1271,7 +1438,7 @@ class DataProcesser {
     await users.deleteAll(users.keys);
     await followingBox.deleteAll(followingBox.keys);
     await followersBox.deleteAll(followersBox.keys);
-
+    await reactionsBox.deleteAll(reactionsBox.keys);
 
     await feedPages.deleteAll(feedPages.keys);
     await commentsIndex.deleteAll(commentsIndex.keys);

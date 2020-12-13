@@ -66,6 +66,8 @@ void main() async {
   cacheBox = await Hive.openLazyBox('cache');
   commentsIndex = await Hive.openLazyBox('commentsIndex');
 
+  reactionsBox = await Hive.openLazyBox('reactions');
+
   revisionCache =
       await Hive.openBox('revisionCache'); // TODO Can be cleared at any time
 
@@ -118,6 +120,18 @@ void main() async {
     final cRequestFollow = await cacheBox.get('requestFollow');
     if (cRequestFollow != null)
       dp.requestFollow = cRequestFollow.cast<String, Map>();
+
+    final cReactions = await cacheBox.get('reactions');
+    //print('cReactions $cReactions');
+    if (cReactions != null)
+      dp.reactions = cReactions.cast<String, List<String>>()
+
+          /* json
+          .decode(cReactions)
+          .cast<String, List>()
+          .map<String, List<String>>(
+              (key, value) => MapEntry(key, value.cast<String>())) */
+          ;
 
     final cMediaPositions = await cacheBox.get('mediaPositions');
 
@@ -1365,7 +1379,11 @@ class _FeedPageState extends State<FeedPage> {
                         rd.setUserId(rd.selectedUserId);
                       } else { */
 
-                      rd.pop();
+                      if (rd.history.length <= 1) {
+                        rd.setHomePage();
+                      } else {
+                        rd.pop();
+                      }
 
                       //}
                     },

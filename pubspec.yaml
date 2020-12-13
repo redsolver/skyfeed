@@ -43,6 +43,8 @@ dependencies:
   scrollable_positioned_list: ^0.1.8
   badges: ^1.1.4
   flutter_barcode_scanner: ^1.0.1
+  universal_platform: ^0.1.3
+  emoji_pick: ^0.1.0
 
   skynet:
     path: ../skynet
@@ -67,8 +69,6 @@ dependency_overrides:
   video_player_web:
     path: ../../cov/plugins/packages/video_player/video_player_web
 
-
-
 flutter_icons:
   android: true
   ios: true
@@ -76,7 +76,6 @@ flutter_icons:
   image_path_ios: "assets/icon/icon_ios.png"
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: "assets/icon/adaptive_icon.png"
-
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

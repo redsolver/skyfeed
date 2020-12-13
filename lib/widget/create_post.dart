@@ -22,6 +22,8 @@ import 'package:mime/mime.dart';
 import 'package:video_player/video_player.dart';
 import 'package:skynet/skynet.dart';
 
+import 'custom_popup_menu.dart';
+import 'emoji_popup_menu.dart';
 import 'link.dart';
 
 class CreatePostWidget extends StatefulWidget {
@@ -47,8 +49,10 @@ class SendIntent extends ActivateIntent {
 }
 
 class _CreatePostWidgetState extends State<CreatePostWidget> {
-  bool _isEmojiPickerExpanded = false;
-  bool _isEmojiPickerAnimationInProgress = false;
+  /* bool _isEmojiPickerExpanded = false;
+  bool _isEmojiPickerAnimationInProgress = false; */
+
+  final _emojiPopupController = CustomPopupMenuController();
 
   final _textCtrl = TextEditingController();
 
@@ -751,7 +755,44 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                             }
                           },
                         ),
-                      _buildIconButton(
+                      InkWell(
+                        borderRadius: borderRadius,
+                        onTap: () {},
+                        child: CustomPopupMenu(
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Icon(
+                              UniconsLine.smile,
+                              color: rd.isDarkTheme
+                                  ? SkyColors.grey2
+                                  : (SkyColors.darkGrey),
+                              size: 22,
+                            ),
+                          ),
+                          menuBuilder: () => EmojiPopupMenuWidget(
+                            _emojiPopupController,
+                            callback: (emoji) {
+                              int position = _textCtrl.selection.start;
+
+                              if (position == -1) position = 0;
+
+                              _textCtrl.text =
+                                  _textCtrl.text.substring(0, position) +
+                                      emoji +
+                                      _textCtrl.text.substring(position);
+
+                              _textCtrl.selection = TextSelection(
+                                baseOffset: position + emoji.length,
+                                extentOffset: position + emoji.length,
+                              );
+                            },
+                          ),
+                          pressType: PressType.singleClick,
+                          verticalMargin: -10,
+                          controller: _emojiPopupController,
+                        ),
+                      ),
+                      /*       _buildIconButton(
                         // Emoji picker
                         iconData: UniconsLine.smile,
                         onTap: () async {
@@ -760,7 +801,7 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                             _isEmojiPickerExpanded = !_isEmojiPickerExpanded;
                           });
                         },
-                      ),
+                      ), */
                       /*  SizedBox(
                         // 0xe930 OLD
                         width: 8,
@@ -793,7 +834,7 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                 SizedBox(
                   height: 4,
                 ),
-                AnimatedContainer(
+                /*         AnimatedContainer(
                   height: _isEmojiPickerExpanded ? 128 : 0,
                   child: _isEmojiPickerExpanded ||
                           _isEmojiPickerAnimationInProgress
@@ -849,7 +890,7 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                   },
                   duration: Duration(milliseconds: 200),
                   curve: Curves.easeInOutCubic,
-                ),
+                ), */
                 /* SizedBox(
                   height: 4,
                 ), */
