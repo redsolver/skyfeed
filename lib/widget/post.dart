@@ -800,7 +800,7 @@ class _PostWidgetState extends State<PostWidget> {
                               child: Row(
                                 children: [
                                   SizedBox(
-                                    width: 4,
+                                    width: 8,
                                   ),
                                   for (final key in data.keys)
                                     EmojiReactionWidget(
