@@ -237,6 +237,10 @@ class _UserInfoWidgetState extends State<UserInfoWidget> {
                                       _loading = true;
                                     });
                                     await dp.follow(userId);
+
+                                  /*   dp.log(
+                                        'following', dp.following.toString()); */
+
                                     if (mounted)
                                       setState(() {
                                         _loading = false;

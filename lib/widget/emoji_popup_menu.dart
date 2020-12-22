@@ -39,20 +39,41 @@ class EmojiPopupMenuWidget extends StatelessWidget {
                   color: Colors.transparent,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: emojiGroups.length,
+                    itemCount: emojiGroups.length + 1,
                     itemBuilder: (context, index) {
-                      final emojiGroup = emojiGroups[index];
+                      String emojiGroupName;
 
-                      final emojis = Emoji.byGroup(emojiGroup.group).toList();
-                      if (emojiGroup.group == EmojiGroup.smileysEmotion) {
+                      final emojis = <String>[];
+
+                      if (index == 0) {
+                        emojiGroupName = 'Frequently used';
+                        final Map<String, int> usage = {};
+
+                        for (final reacts in dp.reactions.values) {
+                          for (final r in reacts) {
+                            usage.putIfAbsent(r, () => 0);
+                            usage[r]++;
+                          }
+                        }
+                        emojis.addAll(usage.keys);
+                        emojis.sort((a, b) => -usage[a].compareTo(usage[b]));
+                      } else {
+                        final emojiGroup = emojiGroups[index - 1];
+                        emojiGroupName = emojiGroup.name;
+
                         emojis.addAll(
-                            //Emoji.byShortName('thumbsup'),
-                            Emoji.bySubgroup(EmojiSubgroup.handFingersClosed)
+                            Emoji.byGroup(emojiGroup.group).map((e) => e.char));
+                        if (emojiGroup.group == EmojiGroup.smileysEmotion) {
+                          emojis.addAll(
+                              //Emoji.byShortName('thumbsup'),
+                              Emoji.bySubgroup(EmojiSubgroup.handFingersClosed)
+                                  .map((e) => e.char)
 
-                            /* Emoji.byGroup(EmojiGroup.peopleBody) */);
+                              /* Emoji.byGroup(EmojiGroup.peopleBody) */);
+                        }
                       }
 
-                      final List<List<Emoji>> rows = [];
+                      final List<List<String>> rows = [];
 
                       while (emojis.isNotEmpty) {
                         // print('TAKE');
@@ -73,7 +94,7 @@ class EmojiPopupMenuWidget extends StatelessWidget {
                               left: 4,
                             ),
                             child: Text(
-                              '${emojiGroup.name}',
+                              '${emojiGroupName}',
                               style: titleTextStyle,
                             ),
                           ),
@@ -86,14 +107,20 @@ class EmojiPopupMenuWidget extends StatelessWidget {
                                       TableCell(
                                         child: InkWell(
                                           borderRadius: borderRadius,
-                                          onTap: () => _select(item.char),
+                                          onTap: () => _select(item),
                                           child: Center(
                                             child: Container(
                                               height: 28,
                                               child: Padding(
                                                 padding:
                                                     const EdgeInsets.all(4.0),
-                                                child: Text(item.char),
+                                                child: Text(
+                                                  item,
+                                                  style: TextStyle(
+                                                    fontFamily:
+                                                        'Noto Color Emoji',
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                           ),

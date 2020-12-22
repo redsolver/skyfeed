@@ -50,28 +50,7 @@ void main() async {
 
   // print(await getApplicationDocumentsDirectory());
 
-  Hive.registerAdapter(UserAdapter());
-
-  Hive.registerAdapter(FeedAdapter());
-  Hive.registerAdapter(PostAdapter());
-  Hive.registerAdapter(PostContentAdapter());
-
-  dataBox = await Hive.openBox('data');
-
-  users = await Hive.openBox('users');
-  followingBox = await Hive.openLazyBox('following');
-  followersBox = await Hive.openLazyBox('followers');
-  feedPages = await Hive.openLazyBox('feedPages');
-
-  cacheBox = await Hive.openLazyBox('cache');
-  commentsIndex = await Hive.openLazyBox('commentsIndex');
-
-  reactionsBox = await Hive.openLazyBox('reactions');
-
-  revisionCache =
-      await Hive.openBox('revisionCache'); // TODO Can be cleared at any time
-
-  pointerBox = await Hive.openBox('feed-pointer');
+  await dp.init();
 
   // final user = AppState.loggedInUser;
 
@@ -89,60 +68,7 @@ void main() async {
     AppState.skynetUser = SkynetUser.fromSeed(data['seed'].cast<int>());
     AppState.userId = data['id'];
 
-    print('userId ${AppState.userId}');
-    print('skyfeedUserId ${AppState.skynetUser.id}');
-
-    print('main() 2 ${DateTime.now()}');
-
-    dp.initAccount();
-
-    print('main() 3 ${DateTime.now()}');
-
-    final cFollowing = await cacheBox.get('following');
-
-    if (cFollowing != null) dp.following = cFollowing.cast<String, Map>();
-
-    final cFollowers = await cacheBox.get('followers');
-
-    if (cFollowers != null) dp.followers = cFollowers.cast<String, Map>();
-
-    final cPrivateFollowing = await cacheBox.get('privateFollowing');
-
-    if (cPrivateFollowing != null)
-      dp.privateFollowing = cPrivateFollowing.cast<String, Map>();
-
-    print('main() 4 ${DateTime.now()}');
-
-    dp.checkFollowingUpdater();
-
-    print('main() 5 ${DateTime.now()}');
-
-    final cRequestFollow = await cacheBox.get('requestFollow');
-    if (cRequestFollow != null)
-      dp.requestFollow = cRequestFollow.cast<String, Map>();
-
-    final cReactions = await cacheBox.get('reactions');
-    //print('cReactions $cReactions');
-    if (cReactions != null)
-      dp.reactions = cReactions.cast<String, List<String>>()
-
-          /* json
-          .decode(cReactions)
-          .cast<String, List>()
-          .map<String, List<String>>(
-              (key, value) => MapEntry(key, value.cast<String>())) */
-          ;
-
-    final cMediaPositions = await cacheBox.get('mediaPositions');
-
-    if (cMediaPositions != null)
-      dp.mediaPositions = json.decode(cMediaPositions).cast<String, Map>();
-
-    if (cacheBox.containsKey('saved')) {
-      if (dp.saved == null) {
-        dp.saved = (await cacheBox.get('saved')).cast<String, Map>();
-      }
-    }
+    await dp.loadEverything();
   }
 
   print('main() } ${DateTime.now()}');
@@ -831,7 +757,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     PopupMenuItem(
                       child: Text(
-                        'Version Beta 0.4.3',
+                        'Version Beta 0.4.9',
                         style: TextStyle(
                           fontStyle: FontStyle.italic,
                         ),
@@ -1122,7 +1048,7 @@ class _FeedPageState extends State<FeedPage> {
     var index = currentItem?.index ?? 0;
     var alignment = currentItem?.itemLeadingEdge ?? 0;
 
-    print('$index align $alignment');
+    // print('$index align $alignment');
 
     int newIndex;
 

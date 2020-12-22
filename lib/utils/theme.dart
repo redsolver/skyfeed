@@ -11,7 +11,9 @@ ThemeData buildThemeData(BuildContext context, String theme) {
         fontFamily: 'Roboto',
       );
 
-  final fontFamilyFallback = <String>[]; // TODO Set
+  final fontFamilyFallback = <String>[
+    'Noto Color Emoji',
+  ]; // TODO Set
 
   newTextTheme = newTextTheme.copyWith(
     bodyText2: newTextTheme.bodyText2.copyWith(
@@ -57,11 +59,11 @@ ThemeData buildThemeData(BuildContext context, String theme) {
 
       // !
       primaryColor: Color(0xff73BF71),
-      dividerColor: dark ? Color(0xff3C3C3C) : Color(0xffB0F4BC),
+      dividerColor: dark ? Color(0xff303030) : Color(0xffB0F4BC),
       accentColor: SkyColors.follow,
-      scaffoldBackgroundColor: dark ? Color(0xff202020) : Color(0xfff4f8f5),
-      cardColor: dark ? Color(0xff282828) : Colors.white,
-      dialogBackgroundColor: dark ? Color(0xff282828) : Colors.white,
+      scaffoldBackgroundColor: dark ? Color(0xff191919) : Color(0xfff4f8f5),
+      cardColor: dark ? Color(0xff202020) : Colors.white,
+      dialogBackgroundColor: dark ? Color(0xff202020) : Colors.white,
       textTheme: newTextTheme,
       fontFamily: 'Roboto',
       dialogTheme: DialogTheme(

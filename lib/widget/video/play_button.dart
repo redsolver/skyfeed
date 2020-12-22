@@ -29,7 +29,7 @@ String renderDuration(int x) {
   String str = '$mins:$secs';
 
   if (x >= 3600) {
-    str = '${(x / 3600).abs()}:$str';
+    str = '${(x / 3600).floor()}:$str';
   }
 
   return str;

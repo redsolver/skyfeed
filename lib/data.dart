@@ -3,19 +3,19 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:app/app.dart';
 import 'package:app/model/post.dart';
 import 'package:app/model/user.dart';
 import 'package:app/state.dart';
+import 'package:app/global.dart';
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:hive/hive.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:skynet/skynet.dart';
+
+import 'package:app/utils/string.dart';
 
 // Every second in Data map
 // Every minute on SkyDB (when changes)
-
 
 const $skyfeedFollowing = 'skyfeed-following';
 const $skyfeedPrivateFollowing = 'skyfeed-following-private';
@@ -33,6 +33,87 @@ const $skyfeedUser = 'skyfeed-user';
 const $skyfeedRequestFollow = 'skyfeed-req-follow-';
 
 class DataProcesser {
+  Future<void> init() async {
+    Hive.registerAdapter(UserAdapter());
+
+    Hive.registerAdapter(FeedAdapter());
+    Hive.registerAdapter(PostAdapter());
+    Hive.registerAdapter(PostContentAdapter());
+
+    dataBox = await Hive.openBox('data');
+
+    users = await Hive.openBox('users');
+    followingBox = await Hive.openLazyBox('following');
+    followersBox = await Hive.openLazyBox('followers');
+    feedPages = await Hive.openLazyBox('feedPages');
+
+    cacheBox = await Hive.openLazyBox('cache');
+    commentsIndex = await Hive.openLazyBox('commentsIndex');
+
+    reactionsBox = await Hive.openLazyBox('reactions');
+
+    revisionCache =
+        await Hive.openBox('revisionCache'); // TODO Can be cleared at any time
+
+    pointerBox = await Hive.openBox('feed-pointer');
+  }
+
+  Future<void> loadEverything() async {
+    print('userId ${AppState.userId}');
+    print('skyfeedUserId ${AppState.skynetUser.id}');
+
+    print('main() 2 ${DateTime.now()}');
+
+    dp.initAccount();
+
+    print('main() 3 ${DateTime.now()}');
+
+    final cFollowing = await cacheBox.get('following');
+
+    if (cFollowing != null) dp.following = cFollowing.cast<String, Map>();
+
+    final cFollowers = await cacheBox.get('followers');
+
+    if (cFollowers != null) dp.followers = cFollowers.cast<String, Map>();
+
+    final cPrivateFollowing = await cacheBox.get('privateFollowing');
+
+    if (cPrivateFollowing != null)
+      dp.privateFollowing = cPrivateFollowing.cast<String, Map>();
+
+    print('main() 4 ${DateTime.now()}');
+
+    dp.checkFollowingUpdater();
+
+    print('main() 5 ${DateTime.now()}');
+
+    final cRequestFollow = await cacheBox.get('requestFollow');
+    if (cRequestFollow != null)
+      dp.requestFollow = cRequestFollow.cast<String, Map>();
+
+    final cReactions = await cacheBox.get('reactions');
+    //print('cReactions $cReactions');
+    if (cReactions != null)
+      dp.reactions = cReactions.cast<String, List<String>>()
+
+          /* json
+          .decode(cReactions)
+          .cast<String, List>()
+          .map<String, List<String>>(
+              (key, value) => MapEntry(key, value.cast<String>())) */
+          ;
+
+    final cMediaPositions = await cacheBox.get('mediaPositions');
+
+    if (cMediaPositions != null)
+      dp.mediaPositions = json.decode(cMediaPositions).cast<String, Map>();
+
+    if (cacheBox.containsKey('saved')) {
+      if (dp.saved == null) {
+        dp.saved = (await cacheBox.get('saved')).cast<String, Map>();
+      }
+    }
+  }
   // Map<String, ItemPosition> scrollCache = {};
 
   log(String path, String msg) {
@@ -291,6 +372,7 @@ class DataProcesser {
     String commentTo,
     String repostOf,
     Post parent,
+    int postedAt,
   }) async {
     String feedId = isComment ? 'comments' : 'posts';
     final newPost = Post();
@@ -315,7 +397,9 @@ class DataProcesser {
 
     newPost.id = 0;
 
-    newPost.postedAt = DateTime.now();
+    newPost.postedAt = postedAt != null
+        ? DateTime.fromMillisecondsSinceEpoch(postedAt)
+        : DateTime.now();
 
     int currentPointer = pointerBox.get('${AppState.userId}/feed/$feedId') ?? 0;
 
@@ -706,30 +790,45 @@ class DataProcesser {
     // reactions/d73c16c364606a83fd93777ad74b21cd32ca11729c8573fe6654973a8308d56c/feed/posts/1/0
 
     await for (final _ in dp.getFeedStream(key: 'reactions/${fullPostId}')) {
+      log('stream/reactions', 'got new event');
       yield await getReactions(fullPostId);
     }
   }
 
   Future<Map<String, List<String>>> getReactions(String fullPostId) async {
-    final Map r = await reactionsBox.get(fullPostId);
-    Map<String, List<String>> result = {};
-    for (final userId in r.keys) {
-      if (userId == AppState.userId) continue;
+    try {
+      final Map r = await reactionsBox.get(fullPostId);
+      Map<String, List<String>> result = {};
 
-      for (final reaction in r[userId]) {
-        if (!result.containsKey(reaction)) result[reaction] = [];
-        result[reaction].add(userId);
+      if (r != null) {
+        for (final userId in r.keys) {
+          if (userId == AppState.userId) continue;
+
+          for (final reaction in r[userId]) {
+            if (!result.containsKey(reaction)) result[reaction] = [];
+            result[reaction].add(userId);
+          }
+        }
       }
+
+      if (reactions.containsKey(fullPostId)) {
+        for (final reaction in reactions[fullPostId]) {
+          if (!result.containsKey(reaction)) result[reaction] = [];
+
+          if (!result[reaction].contains(AppState.userId))
+            result[reaction].add(AppState.userId);
+        }
+      }
+
+      log('getReactions', result.toString());
+
+      return result;
+    } catch (e, st) {
+      print(e);
+      print(st);
     }
 
-    for (final reaction in reactions[fullPostId]) {
-      if (!result.containsKey(reaction)) result[reaction] = [];
-
-      if (!result[reaction].contains(AppState.userId))
-        result[reaction].add(AppState.userId);
-    }
-
-    return result;
+    return null;
   }
 
   Future<int> getCommentCount(String fullPostId, int deepness) async {
@@ -1049,8 +1148,12 @@ class DataProcesser {
   Future<void> follow(String userId) async {
     await _follow(userId, following);
 
+    log('follow', 'done $following');
+
     final entry =
         await getEntry(AppState.publicUser, $skyfeedRequestFollow + userId);
+
+    log('rFollow', 'entry: $entry');
 
     Map<String, Map> rFollow = {};
 
@@ -1115,6 +1218,8 @@ class DataProcesser {
     if (map == null) {
       final payload = utf8.encode('{"$userId":{}}');
 
+      // log('follow', 'new map');
+
       final r = await (encrypted
           ? (_setEncryptedFile(
               payload,
@@ -1127,10 +1232,20 @@ class DataProcesser {
               revision: 0,
             )));
 
+      // log('follow', 'result $r');
+
       if (r) {
         map = {};
 
         map[userId] = {};
+
+        if (encrypted) {
+          privateFollowing = map;
+        } else {
+          following = map;
+        }
+
+        // log('follow', 'map result $map');
         return;
       } else if (!r) {
         throw Exception('Could not set SkyDB file');

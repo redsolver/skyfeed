@@ -11,74 +11,103 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:skynet/skynet.dart';
 
+import 'global.dart';
 import 'model/user.dart';
 
-LazyBox cacheBox;
-Box revisionCache;
+export 'global.dart';
+export 'utils/skylink.dart';
 
-Box users;
+typedef Widget UserCallback(User user); //function signature
 
-LazyBox followingBox;
-LazyBox followersBox;
+class UserBuilder extends StatefulWidget {
+  final String userId;
+  final UserCallback callback;
 
-LazyBox feedPages;
+  UserBuilder({
+    @required this.userId,
+    @required this.callback,
+  });
 
-LazyBox commentsIndex;
-
-LazyBox reactionsBox;
-
-Box pointerBox;
-
-Box dataBox;
-
-extension StringExtension on String {
-  String truncateTo(int maxLength) =>
-      (this.length <= maxLength) ? this : '${this.substring(0, maxLength)}...';
+  @override
+  _UserBuilderState createState() => _UserBuilderState();
 }
 
-String resolveSkylink(String link, {bool trusted = false}) {
-  // TODO Tests
-  if (link.startsWith('sia://')) {
-    final uri = Uri.tryParse(link);
+class _UserBuilderState extends State<UserBuilder> {
+  Stream<User> stream;
 
-    if (uri == null) return null;
+  final int localId = dp.getLocalId();
+  @override
+  void initState() {
+    super.initState();
 
-    final host = uri.host;
+    stream = processStream(getUserStream(widget.userId, localId));
+  }
 
-    if (host.endsWith('.hns')) {
-      return 'https://${host.split(".").first}.hns.${SkynetConfig.host}/${link.substring(6 + host.length + 1)}';
-    } else {
-      return 'https://${SkynetConfig.host}/' + link.substring(6);
+  @override
+  void dispose() {
+    // print('dispose');
+    dp.removeProfileStream(widget.userId, localId);
+
+    super.dispose();
+  }
+
+  User cachedUser;
+
+  Stream<User> processStream(Stream<User> s) async* {
+    await for (final u in s) {
+      if (u == null) {
+        yield cachedUser;
+      } else {
+        if (u.username != cachedUser?.username ||
+            u.picture != cachedUser?.picture ||
+            u.bio != cachedUser?.bio) {
+          //print('OLD ${json.encode(cachedUser)}');
+          // print('NEW ${json.encode(u)}');
+          // TODO more efficient
+          yield u;
+          cachedUser = u;
+        } else {
+          //print('same');
+        }
+      }
     }
   }
 
-  if (trusted) {
-    return link;
-  } else {
-    return '';
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User>(
+      stream: stream,
+      builder: (context, snapshot) => widget.callback(snapshot.data),
+    );
+  }
+}
+
+Stream<User> getUserStream(String userId, int localId) async* {
+  // print('getUserStream $userId');
+
+  // TODO optimize speed
+
+  // print('local$localId ${DateTime.now()}');
+
+  final initialUser = users.get(userId);
+  // print('local$localId ${DateTime.now()}');
+
+  if (initialUser != null) {
+    initialUser.id = userId;
+
+    yield initialUser;
   }
 
-/*       msgText = msgText.replaceAllMapped('sia://', (match) {
-          final str =
-              msgText.substring(match.end).split(' ').first.split('/').first;
-
-          if (str.length < 46) {
-            return 'https://${SkynetConfig.host}/hns/';
-          } else {
-            return 'https://${SkynetConfig.host}/';
-          }
-        }); */
+  yield* dp.getProfileStream(userId, localId);
 }
+
 
 final borderRadius = BorderRadius.circular(8);
 final borderRadius4 = BorderRadius.circular(4);
+final borderRadius6 = BorderRadius.circular(6);
 
 const mobileBreakpoint = 740;
 const tabletBreakpoint = 1260;
-
-final ws = SkyDBoverWS();
-
-final dp = DataProcesser();
 
 class SkyColorsDark extends SkyColors {}
 
@@ -104,7 +133,7 @@ class SkyColors {
   // static Color get veryLightGrey =>
 
   static Color get headerGreen =>
-      rd.isDarkTheme ? Color(0xff3F3F3F) : Color(0xffd5ecdb);
+      rd.isDarkTheme ? Color(0xff303030) : Color(0xffd5ecdb);
 }
 
 final minuteStream = StreamController<Null>.broadcast();

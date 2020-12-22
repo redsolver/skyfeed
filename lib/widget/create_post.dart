@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:app/app.dart';
 import 'package:app/model/post.dart';
 import 'package:app/state.dart';
+import 'package:app/utils/image.dart';
 import 'package:app/widget/sky_button.dart';
 import 'package:app/widget/video/play_button.dart';
 
@@ -1062,14 +1063,4 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
   }
 }
 
-Future<PostContent> calculateImageStuff(Uint8List data) async {
-  img.Image image = img.decodeImage(data);
 
-  return PostContent()
-    ..aspectRatio = image.width / image.height
-    ..blurHash = encodeBlurHash(
-      image.getBytes(format: img.Format.rgba),
-      image.width,
-      image.height,
-    );
-}

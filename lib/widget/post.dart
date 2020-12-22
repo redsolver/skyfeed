@@ -20,6 +20,8 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:app/utils/string.dart';
+
 class PostWidget extends StatefulWidget {
   final Post post;
   final Post repost;
@@ -796,12 +798,15 @@ class _PostWidgetState extends State<PostWidget> {
                             if (data == null) return SizedBox();
 
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 6.0),
-                              child: Row(
+                              padding: const EdgeInsets.only(
+                                bottom: 2.0,
+                                top: 8.0,
+                                left: 8,
+                                right: 8,
+                              ),
+                              child: Wrap(
+                                runSpacing: 8,
                                 children: [
-                                  SizedBox(
-                                    width: 8,
-                                  ),
                                   for (final key in data.keys)
                                     EmojiReactionWidget(
                                       key,
