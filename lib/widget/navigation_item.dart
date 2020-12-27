@@ -5,12 +5,14 @@ class NavigationItem extends StatelessWidget {
   final String label;
   final Function onTap;
   final Color color;
+  final int notificationCount;
 
   NavigationItem({
     this.icon,
     this.label,
     this.onTap,
     this.color,
+    this.notificationCount = 0,
   });
 
   @override
@@ -44,6 +46,24 @@ class NavigationItem extends StatelessWidget {
             ),
             /* ), */
           ),
+          if (notificationCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Material(
+                shape: CircleBorder(),
+                elevation: 0,
+                color: SkyColors.red,
+                child: Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: Text(
+                    notificationCount.toString(),
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

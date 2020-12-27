@@ -60,13 +60,14 @@ class PostAdapter extends TypeAdapter<Post> {
       ..content = fields[14] as PostContent
       ..isDeleted = fields[17] as bool
       ..postedAtOld = fields[15] as DateTime
-      ..ts = fields[16] as int;
+      ..ts = fields[16] as int
+      ..mentions = (fields[18] as List)?.cast<String>();
   }
 
   @override
   void write(BinaryWriter writer, Post obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(10)
       ..write(obj.id)
       ..writeByte(11)
@@ -82,7 +83,9 @@ class PostAdapter extends TypeAdapter<Post> {
       ..writeByte(15)
       ..write(obj.postedAtOld)
       ..writeByte(16)
-      ..write(obj.ts);
+      ..write(obj.ts)
+      ..writeByte(18)
+      ..write(obj.mentions);
   }
 
   @override
@@ -115,13 +118,14 @@ class PostContentAdapter extends TypeAdapter<PostContent> {
       ..blurHash = fields[15] as String
       ..mediaDuration = fields[16] as int
       ..link = fields[17] as String
-      ..linkTitle = fields[18] as String;
+      ..linkTitle = fields[18] as String
+      ..pollOptions = (fields[19] as Map)?.cast<String, String>();
   }
 
   @override
   void write(BinaryWriter writer, PostContent obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(10)
       ..write(obj.text)
       ..writeByte(11)
@@ -139,7 +143,9 @@ class PostContentAdapter extends TypeAdapter<PostContent> {
       ..writeByte(17)
       ..write(obj.link)
       ..writeByte(18)
-      ..write(obj.linkTitle);
+      ..write(obj.linkTitle)
+      ..writeByte(19)
+      ..write(obj.pollOptions);
   }
 
   @override
@@ -188,7 +194,8 @@ Post _$PostFromJson(Map<String, dynamic> json) {
     ..postedAtOld = json['postedAt'] == null
         ? null
         : DateTime.parse(json['postedAt'] as String)
-    ..ts = json['ts'] as int;
+    ..ts = json['ts'] as int
+    ..mentions = (json['mentions'] as List)?.map((e) => e as String)?.toList();
 }
 
 Map<String, dynamic> _$PostToJson(Post instance) {
@@ -209,6 +216,7 @@ Map<String, dynamic> _$PostToJson(Post instance) {
   writeNotNull('isDeleted', instance.isDeleted);
   writeNotNull('postedAt', instance.postedAtOld?.toIso8601String());
   writeNotNull('ts', instance.ts);
+  writeNotNull('mentions', instance.mentions);
   return val;
 }
 
@@ -222,7 +230,10 @@ PostContent _$PostContentFromJson(Map<String, dynamic> json) {
     ..blurHash = json['blurHash'] as String
     ..mediaDuration = json['mediaDuration'] as int
     ..link = json['link'] as String
-    ..linkTitle = json['linkTitle'] as String;
+    ..linkTitle = json['linkTitle'] as String
+    ..pollOptions = (json['pollOptions'] as Map<String, dynamic>)?.map(
+      (k, e) => MapEntry(k, e as String),
+    );
 }
 
 Map<String, dynamic> _$PostContentToJson(PostContent instance) {
@@ -243,5 +254,6 @@ Map<String, dynamic> _$PostContentToJson(PostContent instance) {
   writeNotNull('mediaDuration', instance.mediaDuration);
   writeNotNull('link', instance.link);
   writeNotNull('linkTitle', instance.linkTitle);
+  writeNotNull('pollOptions', instance.pollOptions);
   return val;
 }

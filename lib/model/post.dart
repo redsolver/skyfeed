@@ -52,7 +52,16 @@ class Post {
   }
 
   @JsonKey(ignore: true)
+  String get fullPostId => '$userId/feed/$feedId/$id';
+
+  @JsonKey(ignore: true)
   String userId;
+
+  @JsonKey(ignore: true)
+  String mentionOf;
+
+  @JsonKey(ignore: true)
+  String followNotificationFor;
 
   /* String id; */
   @JsonKey(ignore: true)
@@ -100,6 +109,9 @@ class Post {
   @HiveField(16)
   int ts; // 1264353454
 
+  @HiveField(18)
+  List<String> mentions;
+
   Post();
 
   factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
@@ -138,6 +150,9 @@ class PostContent {
   @HiveField(18)
   String linkTitle;
   // TODO maybe add link.description|icon|image
+
+  @HiveField(19)
+  Map<String, String> pollOptions;
 
   PostContent();
 

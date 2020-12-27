@@ -3,19 +3,19 @@ import 'dart:async';
 import 'package:app/app.dart';
 import 'package:app/widget/user.dart';
 
-class NotificationsWidget extends StatefulWidget {
+/* class NotificationsPageOld extends StatefulWidget {
   @override
-  _NotificationsWidgetState createState() => _NotificationsWidgetState();
+  _NotificationsPageState createState() => _NotificationsPageState();
 }
 
-class _NotificationsWidgetState extends State<NotificationsWidget> {
+class _NotificationsPageState extends State<NotificationsPageOld> {
   StreamSubscription _sub;
 
   @override
   void initState() {
     super.initState();
 
-    _sub = dp.onRequestFollowChange.stream.listen((_) {
+    _sub = dp.onNotificationsChange.stream.listen((_) {
       setState(() {});
     });
   }
@@ -29,11 +29,13 @@ class _NotificationsWidgetState extends State<NotificationsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (dp.requestFollow.isEmpty) return SizedBox();
+    if (dp.requestFollow.isEmpty && dp.requestMention.isEmpty)
+      return SizedBox(
+        width: double.infinity,
+      );
 
-    return ConstrainedBox(
-      constraints:
-          BoxConstraints(maxHeight: rd.isMobile ? double.infinity : 256),
+    return SizedBox(
+      width: double.infinity,
       child: Container(
         decoration: getCardDecoration(context),
         child: ListView(
@@ -69,7 +71,7 @@ class _NotificationsWidgetState extends State<NotificationsWidget> {
     );
   }
 }
-
+ */
 class NotificationUserFollowWidget extends StatefulWidget {
   const NotificationUserFollowWidget({
     Key key,
@@ -89,39 +91,42 @@ class _NotificationUserFollowWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return UserWidget(
-      userId: widget.userId,
-      key: ValueKey(widget.userId),
-      onPressed: () {
-        rd.setUserId(widget.userId);
-      },
-      details: 'followed you',
-      isLoading: _loading == true,
-      onAccept: _loading == null
-          ? null
-          : () async {
-              setState(() {
-                _loading = true;
-              });
-              await dp.addUserToFollowers(widget.userId);
+    return Container(
+      decoration: getCardDecoration(context),
+      child: UserWidget(
+        userId: widget.userId,
+        key: ValueKey(widget.userId),
+        onPressed: () {
+          rd.setUserId(widget.userId);
+        },
+        details: 'followed you',
+        isLoading: _loading == true,
+        onAccept: _loading == null
+            ? null
+            : () async {
+                setState(() {
+                  _loading = true;
+                });
+                await dp.addUserToFollowers(widget.userId);
 
-              await dp.removeUserFromPublicRequestFollow(widget.userId);
+                await dp.removeUserFromPublicRequestFollow(widget.userId);
 
-              setState(() {
-                _loading = null;
-              });
-            },
-      onReject: _loading == null
-          ? null
-          : () async {
-              setState(() {
-                _loading = true;
-              });
-              await dp.removeUserFromPublicRequestFollow(widget.userId);
-              setState(() {
-                _loading = null;
-              });
-            },
+                setState(() {
+                  _loading = null;
+                });
+              },
+        onReject: _loading == null
+            ? null
+            : () async {
+                setState(() {
+                  _loading = true;
+                });
+                await dp.removeUserFromPublicRequestFollow(widget.userId);
+                setState(() {
+                  _loading = null;
+                });
+              },
+      ),
     );
   }
 }

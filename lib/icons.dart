@@ -38,7 +38,7 @@ class UniconsLine {
       IconData(0xe9b0, fontFamily: fontFamily);
 
   static const IconData music = IconData(0xea4f, fontFamily: fontFamily);
-  static const IconData image = IconData(0xea54, fontFamily: fontFamily);
+  // static const IconData image = IconData(0xea54, fontFamily: fontFamily);
   static const IconData film = IconData(0xea5c, fontFamily: fontFamily);
 
   static const IconData linkAdd = IconData(0xec57, fontFamily: fontFamily);
@@ -48,6 +48,11 @@ class UniconsLine {
   static const IconData user = IconData(0xea0d, fontFamily: fontFamily);
 
   static const IconData estate = IconData(0xeca5, fontFamily: fontFamily);
+
+  static const IconData chart = IconData(0xe8d0, fontFamily: fontFamily);
+  static const IconData plusCircle = IconData(0xe9c1, fontFamily: fontFamily);
+
+  static const IconData imageV = IconData(0xea57, fontFamily: fontFamily);
 }
 
 class UniconsSolid {

@@ -73,6 +73,7 @@ class _CommentsWidgetState extends State<CommentsWidget> {
                           p,
                           noDecoration: true,
                           indentContent: false,
+                          key: ValueKey(p.fullPostId),
                         ),
                       ),
                   ],

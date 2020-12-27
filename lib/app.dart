@@ -101,7 +101,6 @@ Stream<User> getUserStream(String userId, int localId) async* {
   yield* dp.getProfileStream(userId, localId);
 }
 
-
 final borderRadius = BorderRadius.circular(8);
 final borderRadius4 = BorderRadius.circular(4);
 final borderRadius6 = BorderRadius.circular(6);
@@ -113,9 +112,13 @@ class SkyColorsDark extends SkyColors {}
 
 class SkyColors {
   static const follow = Color(0xff19B417);
+
+  static const lightGreen = Color(0xffd5ecdb);
+
   static const private = Color(0xff248ADB);
 
   static const red = Color(0xffEC1873);
+  static const lightRed = Color(0xffFFC5DE);
 
   static Color get black => rd.isDarkTheme ? Colors.white : Color(0xff000000);
 
@@ -133,7 +136,7 @@ class SkyColors {
   // static Color get veryLightGrey =>
 
   static Color get headerGreen =>
-      rd.isDarkTheme ? Color(0xff303030) : Color(0xffd5ecdb);
+      rd.isDarkTheme ? Color(0xff303030) : lightGreen;
 }
 
 final minuteStream = StreamController<Null>.broadcast();

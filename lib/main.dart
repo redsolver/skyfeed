@@ -1,33 +1,24 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:developer';
 
 import 'package:app/app.dart';
 import 'package:app/auth/auth.dart';
-import 'package:app/model/post.dart';
-import 'package:app/model/user.dart';
+import 'package:app/feed_page.dart';
 import 'package:app/state.dart';
 import 'package:app/utils/theme.dart';
-import 'package:app/utils/web.dart';
 import 'package:app/widget/chat.dart';
 import 'package:app/widget/create_post.dart';
 import 'package:app/widget/discover.dart';
-import 'package:app/widget/login_hint.dart';
 import 'package:app/widget/logo.dart';
 import 'package:app/widget/navigation_item.dart';
-import 'package:app/widget/notifications.dart';
-import 'package:app/widget/post.dart';
 import 'package:app/widget/sky_button.dart';
 import 'package:app/widget/user_info.dart';
 import 'package:badges/badges.dart';
-import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:skynet/skynet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -93,10 +84,11 @@ class SkyRoutePath {
   final bool isUnknown;
 
   final bool createPost;
+  final bool notificationsPage;
 
   ItemPosition scrollCache;
 
-  SkyRoutePath.home({this.createPost = false})
+  SkyRoutePath.home({this.createPost = false, this.notificationsPage = false})
       : userId = null,
         postId = null,
         isUnknown = false;
@@ -104,28 +96,37 @@ class SkyRoutePath {
   SkyRoutePath.userPage(this.userId)
       : postId = null,
         createPost = false,
+        notificationsPage = false,
         isUnknown = false;
 
   SkyRoutePath.postPage(
     this.userId,
     this.postId,
   )   : isUnknown = false,
+        notificationsPage = false,
         createPost = false;
 
   SkyRoutePath.unknown()
       : userId = null,
         postId = null,
         createPost = false,
+        notificationsPage = false,
         isUnknown = true;
 
   bool get isHomePage =>
-      userId == null && postId == null && createPost == false;
+      userId == null &&
+      postId == null &&
+      createPost == false &&
+      notificationsPage == false;
 
   bool get isUserPage => userId != null && postId == null;
 
   bool get isPostPage => userId != null && postId != null;
   bool get isCreatePostPage =>
       userId == null && postId == null && createPost == true;
+
+  bool get isNotificationsPage =>
+      userId == null && postId == null && notificationsPage == true;
 
   String toString() => 'SkyRoutePath{scrollCache: $scrollCache}';
 }
@@ -136,6 +137,9 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
 
   String selectedUserId;
   String selectedPostId;
+
+  bool isNotificationsPage = false;
+
   bool show404 = false;
 
   ItemPosition scrollCache;
@@ -152,11 +156,13 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
       return SkyRoutePath.unknown();
     }
 
-    final path = selectedUserId == null
-        ? SkyRoutePath.home(createPost: createPost ?? false)
-        : selectedPostId == null
-            ? SkyRoutePath.userPage(selectedUserId)
-            : SkyRoutePath.postPage(selectedUserId, selectedPostId);
+    final path = isNotificationsPage
+        ? SkyRoutePath.home(notificationsPage: true)
+        : selectedUserId == null
+            ? SkyRoutePath.home(createPost: createPost ?? false)
+            : selectedPostId == null
+                ? SkyRoutePath.userPage(selectedUserId)
+                : SkyRoutePath.postPage(selectedUserId, selectedPostId);
 
     path.scrollCache = scrollCache;
 
@@ -283,6 +289,7 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
   Future<void> setNewRoutePath(SkyRoutePath path) async {
     if (path.isUnknown) {
       selectedUserId = null;
+      isNotificationsPage = false;
       show404 = true;
       return;
     }
@@ -303,6 +310,7 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
     scrollCache = history.last.scrollCache;
 
     createPost = false;
+    isNotificationsPage = false;
 
     // print('setNewRoutePath scrollCache $scrollCache');
 
@@ -318,6 +326,8 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
 
       if (path.isCreatePostPage) {
         createPost = true;
+      } else if (path.isNotificationsPage) {
+        isNotificationsPage = true;
       }
     }
 
@@ -342,7 +352,20 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
     selectedUserId = null;
     selectedPostId = null;
     scrollCache = null;
+    isNotificationsPage = false;
     createPost = false;
+
+    _addToHistory();
+
+    notifyListeners();
+  }
+
+  void setNotificationsPage() {
+    selectedUserId = null;
+    selectedPostId = null;
+    scrollCache = null;
+    createPost = false;
+    isNotificationsPage = true;
 
     _addToHistory();
 
@@ -354,6 +377,7 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
     selectedPostId = null;
     scrollCache = null;
     createPost = true;
+    isNotificationsPage = false;
 
     _addToHistory();
 
@@ -364,6 +388,8 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
     selectedUserId = userId;
     selectedPostId = null;
     scrollCache = null;
+    createPost = false;
+    isNotificationsPage = false;
 
     _addToHistory();
 
@@ -375,6 +401,8 @@ class SkyRouterDelegate extends RouterDelegate<SkyRoutePath>
     selectedUserId = userId;
     selectedPostId = postId;
     scrollCache = null;
+    createPost = false;
+    isNotificationsPage = false;
 
     _addToHistory();
 
@@ -493,7 +521,11 @@ class SkyRouteInformationParser extends RouteInformationParser<SkyRoutePath> {
     }
 
     if (uri.pathSegments.length == 1) {
-      return SkyRoutePath.home(createPost: true);
+      if (uri.pathSegments.first == 'create') {
+        return SkyRoutePath.home(createPost: true);
+      } else {
+        return SkyRoutePath.home(notificationsPage: true);
+      }
     }
 
     if (uri.pathSegments.length >= 2) {
@@ -528,6 +560,9 @@ class SkyRouteInformationParser extends RouteInformationParser<SkyRoutePath> {
     }
     if (path.isCreatePostPage) {
       return RouteInformation(location: '/create');
+    }
+    if (path.isNotificationsPage) {
+      return RouteInformation(location: '/notifications');
     }
     if (path.isUserPage) {
       return RouteInformation(location: '/user/${path.userId}');
@@ -615,6 +650,19 @@ class _HomePageState extends State<HomePage> {
                           rd.setHomePage();
                         },
                       ),
+                      if (rd.isNotificationsPage == true) ...[
+                        Text('/'),
+                        InkWell(
+                          borderRadius: borderRadius,
+                          /*   onTap: () {
+                            rd.setUserId(rd.selectedUserId);
+                          }, */
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text('Notifications'),
+                          ),
+                        ),
+                      ],
                       if (rd.selectedUserId != null) ...[
                         Text('/'),
                         InkWell(
@@ -756,13 +804,12 @@ class _HomePageState extends State<HomePage> {
                       value: 'logout',
                     ),
                     PopupMenuItem(
-                      child: Text(
-                        'Version Beta 0.4.9',
-                        style: TextStyle(
-                          fontStyle: FontStyle.italic,
-                        ),
+                        child: Text(
+                      'Version Beta 0.5.1',
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
                       ),
-                    ),
+                    )),
                   ],
                   child: Row(
                     children: [
@@ -810,7 +857,9 @@ class _HomePageState extends State<HomePage> {
             height: 32,
           ), */
           Expanded(
-            child: (_mobilePageIndex == 0 || !rd.isMobile)
+            child: (_mobilePageIndex == 0 ||
+                    _mobilePageIndex == 1 ||
+                    !rd.isMobile)
                 ? Row(
                     mainAxisAlignment: width > tabletBreakpoint
                         ? MainAxisAlignment.center
@@ -845,6 +894,26 @@ class _HomePageState extends State<HomePage> {
                                 SizedBox(
                                   height: 16,
                                 ),
+                                StreamBuilder(
+                                  stream: dp.onNotificationsChange.stream,
+                                  builder: (context, snapshot) {
+                                    final notificationsCount =
+                                        dp.getNotificationsCount();
+
+                                    return NavigationItem(
+                                      onTap: () {
+                                        rd.setNotificationsPage();
+                                      },
+                                      icon: UniconsLine.bell,
+                                      label: 'Notifications',
+                                      color: SkyColors.red,
+                                      notificationCount: notificationsCount,
+                                    );
+                                  },
+                                ),
+                                SizedBox(
+                                  height: 16,
+                                ),
                                 NavigationItem(
                                   onTap: () {
                                     rd.setUserId(AppState.userId);
@@ -857,11 +926,11 @@ class _HomePageState extends State<HomePage> {
                                   height: 32,
                                 ),
                               ],
-                              NotificationsWidget(),
+                              // NotificationsWidget(),
                               if (width <= tabletBreakpoint) ...[
-                                SizedBox(
+                                /* SizedBox(
                                   height: 32,
-                                ),
+                                ), */
                                 ChatWidget(),
                                 SizedBox(
                                   height: 32,
@@ -878,28 +947,45 @@ class _HomePageState extends State<HomePage> {
                               maxWidth: rd.isMobile
                                   ? 1000
                                   : (useBigFeedPadding ? 748 : 684)),
-                          child: FeedPage(
-                            rd.isMobile ? null : rd.selectedUserId,
-                            rd.isMobile ? null : rd.selectedPostId,
-                            sidePadding: rd.isMobile
-                                ? 0
-                                : useBigFeedPadding
-                                    ? 64
-                                    : 32,
-                            key: ValueKey(
-                              rd.isMobile
-                                  ? null
-                                  : rd.currentConfiguration.isHomePage
-                                      ? null
-                                      : rd.currentConfiguration.isUserPage
-                                          ? rd.selectedUserId
-                                          : rd.selectedUserId +
-                                              rd.selectedPostId,
-                            ),
-                            showBackButton: rd.currentConfiguration.isHomePage
-                                ? false
-                                : true,
-                          ),
+                          child: (rd.isNotificationsPage ||
+                                  _mobilePageIndex == 1)
+                              ? FeedPage(
+                                  null,
+                                  null,
+                                  isNotificationsPage: true,
+                                  sidePadding: rd.isMobile
+                                      ? 0
+                                      : useBigFeedPadding
+                                          ? 64
+                                          : 32,
+                                  key: ValueKey(
+                                    'page-notifications',
+                                  ),
+                                  showBackButton: true,
+                                )
+                              : FeedPage(
+                                  rd.isMobile ? null : rd.selectedUserId,
+                                  rd.isMobile ? null : rd.selectedPostId,
+                                  sidePadding: rd.isMobile
+                                      ? 0
+                                      : useBigFeedPadding
+                                          ? 64
+                                          : 32,
+                                  key: ValueKey(
+                                    rd.isMobile
+                                        ? null
+                                        : rd.currentConfiguration.isHomePage
+                                            ? null
+                                            : rd.currentConfiguration.isUserPage
+                                                ? rd.selectedUserId
+                                                : rd.selectedUserId +
+                                                    rd.selectedPostId,
+                                  ),
+                                  showBackButton:
+                                      rd.currentConfiguration.isHomePage
+                                          ? false
+                                          : true,
+                                ),
                         ),
                       ),
                       if (width > tabletBreakpoint) ...[
@@ -923,20 +1009,15 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ],
                   )
-                : _mobilePageIndex == 1
+                : _mobilePageIndex == 2
                     ? SizedBox(
                         width: double.infinity,
-                        child: NotificationsWidget(),
+                        child: DiscoverWidget(),
                       )
-                    : _mobilePageIndex == 2
-                        ? SizedBox(
-                            width: double.infinity,
-                            child: DiscoverWidget(),
-                          )
-                        : SizedBox(
-                            width: double.infinity,
-                            child: ChatWidget(),
-                          ),
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ChatWidget(),
+                      ),
           ),
         ],
       ),
@@ -964,458 +1045,6 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _mobilePageIndex = index;
     });
-  }
-}
-
-class FeedPage extends StatefulWidget {
-  final String userId;
-  final String postId;
-  final bool showBackButton;
-  final double sidePadding;
-
-  FeedPage(
-    this.userId,
-    this.postId, {
-    this.showBackButton = false,
-    this.sidePadding = 0,
-    Key key,
-  }) : super(key: key);
-
-  @override
-  _FeedPageState createState() => _FeedPageState();
-}
-
-class _FeedPageState extends State<FeedPage> {
-  bool get isMobile => rd.isMobile;
-
-  List<Post> posts;
-
-  // ScrollController _controller;
-  //PageStorageBucket bucket;
-
-  final ItemScrollController itemScrollController = ItemScrollController();
-  final ItemPositionsListener itemPositionsListener =
-      ItemPositionsListener.create();
-
-  @override
-  void initState() {
-/*     bucket = PageStorageBucket(); */
-/*     _controller = ScrollController(
-      //initialScrollOffset: 100
-      keepScrollOffset: true,
-    ); */
-
-    bool _isItemScrollInitialized = false;
-
-    //final localKey = '${widget.userId}/${widget.postId}';
-
-    itemPositionsListener.itemPositions.addListener(() {
-      itemPositions = itemPositionsListener.itemPositions.value.toList();
-      if (itemScrollController.isAttached) {
-        if (_isItemScrollInitialized) {
-          rd.setScrollCache(itemPositionsListener.itemPositions.value.first);
-        } else {
-          _isItemScrollInitialized = true;
-
-          if (!rd.isMobile) {
-            final item = rd.scrollCache;
-
-            if (item != null)
-              itemScrollController.jumpTo(
-                index: item.index,
-                alignment: item.itemLeadingEdge,
-              );
-          }
-        }
-      }
-    });
-
-    _loadFeedData();
-    /* _controller.addListener(() {
-      print('pos ${_controller.position.keep}');
-    }); */
-
-    super.initState();
-  }
-
-  List<ItemPosition> itemPositions = [];
-
-  void _handleKeyEvent(RawKeyEvent event) {
-    final currentItem = itemPositions.firstWhere(
-        (element) => element.itemLeadingEdge >= 0,
-        orElse: () => null);
-
-    var index = currentItem?.index ?? 0;
-    var alignment = currentItem?.itemLeadingEdge ?? 0;
-
-    // print('$index align $alignment');
-
-    int newIndex;
-
-    if (event.isKeyPressed(LogicalKeyboardKey.arrowUp)) {
-      //setState(() {
-      /*    _controller.animateTo(offset - 200,
-          duration: Duration(milliseconds: 30), curve: Curves.ease); */
-      //});
-      if (index > 2) {
-        newIndex = index - 1;
-      } else {
-        newIndex = 0;
-      }
-      /*     itemScrollController.scrollTo(
-          alignment: 0.02,
-          //alignment: alignment - 0.1,
-          duration: Duration(milliseconds: 100),
-        ); */
-    } else if (event.isKeyPressed(LogicalKeyboardKey.arrowDown)) {
-      if (index == 0) {
-        newIndex = 2;
-      } else {
-        newIndex = index + 1;
-      }
-    }
-
-    if (newIndex != null) {
-      itemScrollController.scrollTo(
-        index: newIndex,
-        alignment: 0.02,
-        //alignment: alignment + 0.1,
-        duration: Duration(milliseconds: 100),
-      );
-    }
-  }
-
-  final int localId = dp.getLocalId();
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    if (userFeedSub != null) userFeedSub.cancel();
-    if (mainFeedSub != null) mainFeedSub.cancel();
-
-    if (userSub != null) {
-      userSub.cancel();
-
-      dp.removeProfileStream(widget.userId, localId);
-    }
-    // _controller.dispose();
-
-    super.dispose();
-  }
-
-  StreamSubscription userFeedSub;
-  StreamSubscription mainFeedSub;
-
-  StreamSubscription userSub;
-
-  bool isCommentView = false;
-
-  void _loadFeedData() async {
-    print('_loadFeedData ${widget.userId}  ${widget.postId}');
-
-    if (widget.userId != null) {
-      if (widget.postId != null) {
-        dp.log('feed/comments', widget.postId);
-
-        isCommentView = true;
-
-        posts = [
-          await dp.getPost('${widget.userId}/feed/${widget.postId}'),
-        ];
-
-        setState(() {});
-      } else {
-        // ! User Feed
-        loadCurrentUserFeedData();
-
-        userFeedSub = dp.getFeedStream(userId: widget.userId).listen((_) {
-          loadCurrentUserFeedData();
-        });
-
-        // print(dp.isFollowingUserPubliclyOrPrivately(widget.userId));
-
-        if (!dp.isFollowingUserPubliclyOrPrivately(widget.userId)) {
-          final User initialUser = users.get(widget.userId);
-
-          if (initialUser?.skyfeedId == null) {
-            userSub =
-                dp.getProfileStream(widget.userId, localId).listen((event) {
-              dp.checkFollowingUpdater();
-            });
-          }
-
-          dp.addTemporaryUserForFeedPage(widget.userId);
-
-          // TODO getProfileStream, then recheck
-
-        }
-      }
-    } else {
-      // ! Home Feed
-
-      loadHomeFeedData();
-
-      mainFeedSub = dp.getFeedStream(userId: '*').listen((_) {
-        loadHomeFeedData();
-      });
-
-      dp.checkFollowingUpdater();
-    }
-  }
-
-  void loadHomeFeedData() async {
-    print('loadHomeFeedData');
-
-    List<Post> tmpPosts = [];
-
-    Future<void> loadUser(String userId) async {
-      final int currentPostsPointer =
-          pointerBox.get('${userId}/feed/posts') ?? 0;
-
-      for (int i = currentPostsPointer; i > currentPostsPointer - 2; i--) {
-        if (i < 0) continue;
-
-        dp.log('feed/home/loadFeed', '$userId/feed/posts/$i');
-        final Feed fp = await feedPages.get('${userId}/feed/posts/$i');
-
-        if (fp != null) {
-          fp.items.forEach((p) {
-            p.feedId = 'posts/$i';
-            p.userId = fp.userId;
-          });
-          tmpPosts.addAll(fp.items);
-        }
-      }
-    }
-
-    final futures = <Future>[];
-
-    for (final userId in dp.getFollowKeys()) {
-      futures.add(loadUser(userId));
-    }
-
-    await Future.wait(futures);
-
-    tmpPosts.removeWhere((element) => element.isDeleted == true);
-    tmpPosts.sort((a, b) => b.postedAt.compareTo(a.postedAt));
-
-    if (posts?.length == tmpPosts.length) return; // TODO Better checksum :D
-
-    posts = tmpPosts;
-
-    print('loadHomeFeedData setState');
-
-    if (mounted) setState(() {});
-  }
-
-  void loadCurrentUserFeedData() async {
-    dp.log('feed/user', 'load');
-
-    List<Post> tmpPosts = [];
-
-    final int currentPostsPointer =
-        pointerBox.get('${widget.userId}/feed/posts') ?? 0;
-
-    for (int i = currentPostsPointer; i > currentPostsPointer - 2; i--) {
-      if (i < 0) continue;
-
-      dp.log('feed/user', 'load ${widget.userId}/feed/posts/$i');
-
-      final Feed fp = await feedPages.get('${widget.userId}/feed/posts/$i');
-
-      if (fp != null) {
-        fp.items.forEach((p) {
-          p.feedId = 'posts/$i';
-          p.userId = widget.userId;
-        });
-
-        tmpPosts.addAll(fp.items);
-
-        dp.log('feed/user', 'add ${fp.items.length} items');
-      }
-    }
-    tmpPosts.removeWhere((element) => element.isDeleted == true);
-    tmpPosts.sort((a, b) => b.postedAt.compareTo(a.postedAt));
-
-    if (posts?.length == tmpPosts.length) return; // TODO Better checksum :D
-
-    posts = tmpPosts;
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (posts == null)
-      return Padding(
-        padding: const EdgeInsets.only(top: 32),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-    int itemCount = widget.postId != null ? 1 : posts.length;
-
-    if (isMobile) {
-      if (widget.userId != null && widget.postId == null) {
-        itemCount++;
-      }
-    } else {
-      if (widget.userId == null) {
-        itemCount++;
-      }
-      if (widget.showBackButton) {
-        itemCount++;
-      }
-    }
-    /* itemCount++; */
-
-    print('[build] FeedPage ${widget.userId}');
-
-    return RawKeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKey: _handleKeyEvent,
-      child: ScrollablePositionedList.separated(
-        // key: PageStorageKey('list-${widget.userId}-${widget.postId}'),
-        padding: EdgeInsets.only(
-          top: (isMobile || widget.showBackButton) ? 0 : 32,
-          left: widget.sidePadding,
-          right: widget.sidePadding,
-        ),
-        itemScrollController: itemScrollController,
-        itemPositionsListener: itemPositionsListener,
-        // controller: _controller,
-        itemCount: itemCount, // TODO +1
-        itemBuilder: (context, index) {
-          if (widget.showBackButton && !rd.isMobile) {
-            if (index == 0) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: SizedBox(
-                  height: 24,
-                  child: InkWell(
-                    borderRadius: borderRadius,
-                    onTap: () {
-                      /*   if (rd.currentConfiguration.isPostPage) {
-                        rd.setUserId(rd.selectedUserId);
-                      } else { */
-
-                      if (rd.history.length <= 1) {
-                        rd.setHomePage();
-                      } else {
-                        rd.pop();
-                      }
-
-                      //}
-                    },
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Icon(
-                          UniconsLine.arrowLeft,
-                          color: SkyColors.follow,
-                          size: 22,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 1.0),
-                          child: Text(
-                            'Back',
-                            style: TextStyle(
-                              color: SkyColors.follow,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }
-            index--;
-          }
-/*         if (index == 0) {
-            return Text(widget.userId.toString());
-          }
-           */
-
-          if (isMobile) {
-            if (widget.userId != null && widget.postId == null) {
-              if (index == 0) {
-                return ContextPage();
-              }
-              index--;
-            }
-          } else {
-            if (widget.userId == null) {
-              if (index == 0) {
-                if (AppState.userId == null) {
-                  return LoginHintWidget();
-                } else {
-                  return CreatePostWidget();
-                }
-              }
-              index--;
-            }
-          }
-
-          final p = posts[index];
-
-          if (p.repostOf != null) {
-            return FutureBuilder<Post>(
-              future: dp.getPost(p.repostOf),
-              builder: (context, snapshot) {
-                if (snapshot.data == null)
-                  return Container(
-                    decoration: getCardDecoration(context),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        'Loading post...',
-                        style: TextStyle(
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  );
-
-                return PostWidget(
-                  snapshot.data,
-                  key: ValueKey(p),
-                  repost: p,
-                );
-              },
-            );
-          }
-
-          return PostWidget(
-            p,
-            showComments: isCommentView,
-            key: ValueKey(p),
-          );
-        },
-        separatorBuilder: (context, index) {
-          if (isMobile) {
-            return Divider(
-              height: 1,
-              thickness: 1,
-            );
-          } else {
-            if (index == 0 && !rd.currentConfiguration.isHomePage) {
-              return SizedBox();
-            } else {
-              return SizedBox(
-                height: 12,
-              );
-            }
-          }
-        },
-      ),
-    );
   }
 }
 
@@ -1451,7 +1080,7 @@ class NavigationBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: StreamBuilder(
-            stream: dp.onRequestFollowChange.stream,
+            stream: dp.onNotificationsChange.stream,
             builder: (context, snapshot) {
               final notificationsCount = dp.getNotificationsCount();
               return Badge(
@@ -1470,8 +1099,7 @@ class NavigationBar extends StatelessWidget {
               );
             },
           ),
-          label: // TODO
-              'Notifications', // TODO mentions (people you're following), comment on your post
+          label: 'Notifications',
         ),
         BottomNavigationBarItem(
           icon: StreamBuilder(

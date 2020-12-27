@@ -9,6 +9,7 @@ import 'package:app/state.dart';
 import 'package:app/global.dart';
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:skynet/skynet.dart';
 
@@ -31,6 +32,7 @@ const $skyfeedMediaPositions = 'skyfeed-media-positions';
 const $skyfeedUser = 'skyfeed-user';
 
 const $skyfeedRequestFollow = 'skyfeed-req-follow-';
+const $skyfeedRequestMention = 'skyfeed-req-mention-';
 
 class DataProcesser {
   Future<void> init() async {
@@ -91,6 +93,10 @@ class DataProcesser {
     if (cRequestFollow != null)
       dp.requestFollow = cRequestFollow.cast<String, Map>();
 
+    final cRequestMention = await cacheBox.get('requestMention');
+    if (cRequestMention != null)
+      dp.requestMention = cRequestMention.cast<String, Map>();
+
     final cReactions = await cacheBox.get('reactions');
     //print('cReactions $cReactions');
     if (cReactions != null)
@@ -104,7 +110,6 @@ class DataProcesser {
           ;
 
     final cMediaPositions = await cacheBox.get('mediaPositions');
-
     if (cMediaPositions != null)
       dp.mediaPositions = json.decode(cMediaPositions).cast<String, Map>();
 
@@ -117,18 +122,17 @@ class DataProcesser {
   // Map<String, ItemPosition> scrollCache = {};
 
   log(String path, String msg) {
-    return;
-
-    print('$path $msg');
+    if (kDebugMode) print('$path $msg');
   }
 
   Map<String, StreamSubscription> _subbedProfilesInternal = {};
 
   final onFollowingChange = StreamController<Null>.broadcast();
-  final onRequestFollowChange = StreamController<Null>.broadcast();
+  final onNotificationsChange = StreamController<Null>.broadcast();
 
   // Requests
   Map<String, Map> requestFollow = {};
+  Map<String, Map> requestMention = {};
 
   // RT
   Map<String, StreamController<User>> subbedProfiles = {};
@@ -224,6 +228,7 @@ class DataProcesser {
     final tmpSuggestions = <String>{
       'd448f1562c20dbafa42badd9f88560cd1adb2f177b30f0aa048cb243e55d37bd', // redsolver
       '70a3fffccae8618b12f8878f94f118350717e363b143f1d5d8df787ffb1c9ae7', // Julian
+      '8126964b3bf6444862610b8da523189fe749c4d4fa8047dddb0f2ff33f65cbc3', // Skynet Labs
     };
 
     for (final mainUserId in getFollowKeys()) {
@@ -381,6 +386,8 @@ class DataProcesser {
 
     // return;
 
+    final usersToMention = <String>[];
+
     if (isRepost) {
       newPost.repostOf = repostOf;
       newPost.parentHash =
@@ -392,6 +399,14 @@ class DataProcesser {
         newPost.commentTo = commentTo;
         newPost.parentHash =
             'sha256:${hex.encode(sha256.hashSync(utf8.encode(json.encode(parent))).bytes)}';
+
+        newPost.mentions = parent.mentions ?? [];
+        if (!newPost.mentions.contains(parent.userId)) {
+          newPost.mentions.add(parent.userId);
+        }
+        newPost.mentions.remove(AppState.userId);
+
+        usersToMention.addAll(newPost.mentions);
       }
     }
 
@@ -408,12 +423,17 @@ class DataProcesser {
     Feed fp =
         await feedPages.get('${AppState.userId}/feed/$feedId/$currentPointer');
 
+    String newFullPostId;
+
     if (fp == null) {
       final newFeedPage = Feed(userId: AppState.userId);
 
       newFeedPage.items = [];
 
       newPost.id = newFeedPage.items.length;
+
+      newFullPostId =
+          '${AppState.userId}/feed/$feedId/$currentPointer/${newPost.id}';
 
       newFeedPage.items.add(newPost);
 
@@ -442,6 +462,9 @@ class DataProcesser {
       }
 
       newPost.id = fp.items.length;
+
+      newFullPostId =
+          '${AppState.userId}/feed/$feedId/$currentPointer/${newPost.id}';
 
       fp.items.add(newPost);
 
@@ -494,6 +517,16 @@ class DataProcesser {
       );
 
       await pointerBox.put('${AppState.userId}/feed/$feedId', currentPointer);
+    }
+
+    for (final userId in usersToMention) {
+      print('notify $userId');
+      try {
+        await mention(newFullPostId, userId);
+      } catch (e, st) {
+        print(e);
+        print(st);
+      }
     }
   }
 
@@ -1010,10 +1043,40 @@ class DataProcesser {
 
       cacheBox.put('requestFollow', requestFollow);
 
-      onRequestFollowChange.add(null);
+      onNotificationsChange.add(null);
 
       setRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedRequestFollow,
+          event.entry.revision);
+    });
+
+    ws
+        .subscribe(
+            AppState.publicUser, $skyfeedRequestMention + AppState.userId)
+        .listen((event) async {
+      print('got skyfeedRequestMention');
+
+      if (checkRevisionNumberCache(
+          AppState.skynetUser.id + '#' + $skyfeedRequestMention,
+          event.entry.revision)) return;
+
+      final res = await ws.downloadFileFromRegistryEntry(event);
+
+      final val = json.decode(res.asString).cast<String, Map>();
+
+      if (val == null) {
+        print('null value!');
+        return;
+      }
+
+      requestMention = val;
+
+      cacheBox.put('requestMention', requestMention);
+
+      onNotificationsChange.add(null);
+
+      setRevisionNumberCache(
+          AppState.skynetUser.id + '#' + $skyfeedRequestMention,
           event.entry.revision);
     });
 
@@ -1108,6 +1171,10 @@ class DataProcesser {
           event.entry.revision);
     });
 
+    /*    Stream.periodic(Duration(seconds: 10)).listen((event) {
+      dp.checkFollowingUpdater();
+    }); */
+
     Stream.periodic(Duration(seconds: 30)).listen((event) {
       _updateMediaPositions();
     });
@@ -1145,6 +1212,45 @@ class DataProcesser {
     );
   }
 
+  Future<void> mention(
+    String fullPostId,
+    String userId, {
+    bool remove = false,
+  }) async {
+    print('try mention $userId');
+
+    final entry =
+        await getEntry(AppState.publicUser, $skyfeedRequestMention + userId);
+
+    log('rMention', 'entry: $entry');
+
+    Map<String, Map> rMention = {};
+
+    if (entry != null) {
+      final res = await ws.downloadFileFromRegistryEntry(entry);
+
+      rMention = json.decode(res.asString).cast<String, Map>();
+    }
+    if (remove) {
+      rMention.remove(fullPostId);
+    } else {
+      rMention[fullPostId] = {};
+    }
+
+    log('rMention set', '$rMention');
+
+    await ws.setFile(
+      AppState.publicUser,
+      $skyfeedRequestMention + userId,
+      SkyFile(
+        content: utf8.encode(json.encode(rMention)),
+        filename: 'skyfeed.json',
+        type: 'application/json',
+      ),
+      revision: entry == null ? 0 : DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
   Future<void> follow(String userId) async {
     await _follow(userId, following);
 
@@ -1173,7 +1279,7 @@ class DataProcesser {
         filename: 'skyfeed.json',
         type: 'application/json',
       ),
-      revision: (entry?.entry?.revision ?? 0) + 1,
+      revision: entry == null ? 0 : DateTime.now().millisecondsSinceEpoch,
     );
   }
 
@@ -1573,6 +1679,6 @@ class DataProcesser {
   }
 
   int getNotificationsCount() {
-    return requestFollow.length;
+    return requestFollow.length + requestMention.length;
   }
 }

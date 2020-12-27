@@ -175,6 +175,14 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
       _hovering = value;
     });
   } */
+  var _pollTextCtrls = <String, TextEditingController>{};
+  TextEditingController getPollTextCtrl(String key) {
+    if (_pollTextCtrls.containsKey(key)) {
+      _pollTextCtrls[key] =
+          TextEditingController(text: newPostContent.pollOptions[key]);
+    }
+    return _pollTextCtrls[key];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -423,6 +431,112 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                     ),
                   ),
                 ],
+                if (newPostContent.pollOptions != null) ...[
+                  SizedBox(
+                    height: 16,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Add a poll',
+                            style: titleTextStyle,
+                          ),
+                          Spacer(),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: borderRadius,
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(
+                                  UniconsLine.plusCircle,
+                                  color: SkyColors.follow,
+                                ),
+                              ),
+                              onTap: () {
+                                setState(() {
+                                  newPostContent.pollOptions[
+                                      (newPostContent.pollOptions.length + 1)
+                                          .toString()] = '';
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      for (final key in newPostContent.pollOptions.keys)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: 4.0,
+                            bottom: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 40,
+                                  child: TextField(
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      hintText: 'Enter option...',
+                                      contentPadding: const EdgeInsets.only(
+                                        left: 16,
+                                        right: 16,
+                                        top: 4,
+                                        bottom: 4,
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                    ),
+                                    cursorColor: SkyColors.follow,
+                                    controller: getPollTextCtrl(key),
+                                    onChanged: (val) {
+                                      newPostContent.pollOptions[key] = val;
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 8,
+                              ),
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: borderRadius,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Icon(
+                                      UniconsLine.timesCircle,
+                                      color: SkyColors.red,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      if (newPostContent.pollOptions.length <=
+                                          1) {
+                                        newPostContent.pollOptions = null;
+                                        _pollTextCtrls = {};
+                                      } else {
+                                        newPostContent.pollOptions.remove(key);
+
+                                        _pollTextCtrls.remove(key);
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                    ],
+                  ),
+                ],
                 Material(
                   color: Colors.transparent,
                   child: Row(
@@ -567,7 +681,7 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                       if (newPostContent.image == null)
                         _buildIconButton(
                           // Upload image
-                          iconData: UniconsLine.image,
+                          iconData: UniconsLine.imageV,
                           onTap: () async {
                             try {
                               final result =
@@ -754,6 +868,16 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                               print(e);
                               print(st);
                             }
+                          },
+                        ),
+                      if (newPostContent.pollOptions == null)
+                        _buildIconButton(
+                          // Add Poll
+                          iconData: UniconsLine.chart,
+                          onTap: () async {
+                            setState(() {
+                              newPostContent.pollOptions = {'1': ''};
+                            });
                           },
                         ),
                       InkWell(
@@ -1021,6 +1145,8 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
 
         _imageBytes = null;
 
+        _pollTextCtrls = {};
+
         newPostContent = PostContent();
       });
     } catch (e, st) {
@@ -1062,5 +1188,3 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
     return widget;
   }
 }
-
-

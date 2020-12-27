@@ -16,6 +16,7 @@ import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:regexpattern/regexpattern.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -31,12 +32,15 @@ class PostWidget extends StatefulWidget {
 
   final bool showComments;
 
+  final bool showMentionContext;
+
   PostWidget(this.post,
       {this.repost,
       this.showComments = false,
       this.noDecoration = false,
       this.indentContent = false,
-      Key key})
+      this.showMentionContext = false,
+      @required Key key})
       : super(key: key);
 
   @override
@@ -59,6 +63,13 @@ class _PostWidgetState extends State<PostWidget> {
   @override
   void initState() {
     fullPostId = '${post.userId}/feed/${post.feedId}/${post.id}';
+
+    if (post.content != null && post.content.link == null) {
+      // print('trying to extract link...');
+      post.content.link = RegExp(
+              r"((((H|h)(T|t)|(F|f))(T|t)(P|p)((S|s)?))\://)?(www.|[a-zA-Z0-9].)[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\:[0-9]{1,5})*(/($|[a-zA-Z0-9\.\,\;\?\'\\\+&amp;%\$#\=~_\-@]+))*")
+          .stringMatch(post.content.text ?? '');
+    }
 
     // print('[init] PostWidget ${fullPostId}');
 
@@ -194,6 +205,8 @@ class _PostWidgetState extends State<PostWidget> {
 
   final _emojiPopupController = CustomPopupMenuController();
 
+  bool _showPollResults = false;
+
   @override
   Widget build(BuildContext context) {
     final saved = dp.isSaved(fullPostId);
@@ -250,7 +263,8 @@ class _PostWidgetState extends State<PostWidget> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (widget.repost != null) ...[
+                        if (widget.repost != null ||
+                            widget.showMentionContext) ...[
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Row(
@@ -259,61 +273,94 @@ class _PostWidgetState extends State<PostWidget> {
                                   width: 2,
                                 ),
                                 Icon(
-                                  UniconsLine.repeat,
+                                  widget.showMentionContext
+                                      ? UniconsLine.commentAlt
+                                      : UniconsLine.repeat,
                                   size: 16,
                                 ),
-                                InkWell(
-                                  borderRadius: borderRadius,
-                                  onTap: () {
-                                    rd.setUserId(widget.repost.userId);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4.0),
-                                    child: UserBuilder(
-                                      userId: widget.repost.userId,
-                                      callback: (user) {
-                                        if (user == null) return SizedBox();
+                                if (widget.showMentionContext)
+                                  SizedBox(
+                                    width: 4,
+                                  ),
+                                if (!widget.showMentionContext)
+                                  InkWell(
+                                    borderRadius: borderRadius,
+                                    onTap: () {
+                                      rd.setUserId(widget.repost.userId);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: UserBuilder(
+                                        userId: widget.repost.userId,
+                                        callback: (user) {
+                                          if (user == null) return SizedBox();
 
-                                        return buildUsernameWidget(
-                                          user,
-                                          context,
-                                          fontSize: 13,
-                                        );
-                                      },
+                                          return buildUsernameWidget(
+                                            user,
+                                            context,
+                                            fontSize: 13,
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
-                                ),
                                 Padding(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 4.0),
                                   child: Text(
-                                    'reposted',
+                                    widget.showMentionContext
+                                        ? 'Comment on'
+                                        : 'reposted',
                                     style: TextStyle(
                                       fontSize: 13,
                                     ),
                                   ),
                                 ),
+                                if (widget.showMentionContext)
+                                  InkWell(
+                                    borderRadius: borderRadius,
+                                    onTap: () {
+                                      final s = post.commentTo;
+
+                                      final userId = s.split('/').first;
+
+                                      rd.setPostId(userId,
+                                          s.substring(userId.length + 6));
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: Text(
+                                        'your post',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
-                          if (post.commentTo != null)
+                          if (post.commentTo != null &&
+                              !widget.showMentionContext)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Row(
                                 children: [
-                                  SizedBox(
-                                    width: 2,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 4.0),
-                                    child: Text(
-                                      'Comment on',
-                                      style: TextStyle(
-                                        fontStyle: FontStyle.italic,
+                                  if (!widget.showMentionContext) ...[
+                                    SizedBox(
+                                      width: 2,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 4.0),
+                                      child: Text(
+                                        'Comment on',
+                                        style: TextStyle(
+                                          fontStyle: FontStyle.italic,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                   InkWell(
                                     borderRadius: borderRadius,
                                     onTap: () {
@@ -783,8 +830,125 @@ class _PostWidgetState extends State<PostWidget> {
                               linkTitle: post.content.linkTitle,
                             ),
                           ),
+                        if (post.content.pollOptions != null)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: leftContentIndent,
+                              top: 8,
+                              right: 8.0,
+                            ),
+                            child: StreamBuilder<Map<String, List<String>>>(
+                              stream: dp.getReactionsStream(fullPostId),
+                              builder: (context, snapshot) {
+                                if ((dp.reactions.containsKey(fullPostId) &&
+                                        snapshot.data != null) ||
+                                    _showPollResults) {
+                                  final data = snapshot.data ?? {};
+
+                                  int totalVotes = 0;
+
+                                  for (final key in data.keys) {
+                                    if (RegExp(r'^[0-9]+$').hasMatch(key)) {
+                                      totalVotes += data[key].length;
+                                    }
+                                  }
+                                  final _totalVotes =
+                                      totalVotes == 0 ? 1 : totalVotes;
+
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      for (final key
+                                          in post.content.pollOptions.keys)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 8.0),
+                                          child: _buildPollResultItem(
+                                            post.content.pollOptions[key],
+                                            (data[key] ?? []).length /
+                                                _totalVotes,
+                                            (data[key] ?? [])
+                                                .contains(AppState.userId),
+                                          ),
+                                        ),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 4.0),
+                                        child: Text(
+                                          '$totalVotes votes total',
+                                          style: TextStyle(
+                                            color: SkyColors.follow,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                } else {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      for (final key
+                                          in post.content.pollOptions.keys)
+                                        Container(
+                                          margin: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Theme.of(context)
+                                                  .dividerColor,
+                                            ),
+                                            borderRadius: borderRadius,
+                                            color: Theme.of(context).cardColor,
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius: borderRadius,
+                                              onTap: () {
+                                                dp.addReaction(fullPostId, key);
+                                              },
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                child: Text(
+                                                  post.content.pollOptions[key],
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                    color: SkyColors.follow,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: InkWell(
+                                          onTap: () {
+                                            setState(() {
+                                              _showPollResults = true;
+                                            });
+                                          },
+                                          child: Text(
+                                            'View results',
+                                            style: TextStyle(
+                                              color: SkyColors.follow,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }
+                              },
+                            ),
+                          ),
                         SizedBox(
                           height: (post.content.link != null ||
+                                  post.content.pollOptions != null ||
                                   post.content.image != null ||
                                   audioPlayer != null)
                               ? 6
@@ -807,7 +971,8 @@ class _PostWidgetState extends State<PostWidget> {
                               child: Wrap(
                                 runSpacing: 8,
                                 children: [
-                                  for (final key in data.keys)
+                                  for (final key in data.keys.where((element) =>
+                                      !RegExp(r'^[0-9]+$').hasMatch(element)))
                                     EmojiReactionWidget(
                                       key,
                                       data[key].length,
@@ -1133,5 +1298,66 @@ class _PostWidgetState extends State<PostWidget> {
         ] */
       ],
     );
+  }
+
+  Widget _buildPollResultItem(
+    String label,
+    double rate,
+    bool voted,
+  ) {
+    if (rate == 0) {
+      rate = 0.004;
+      // rate = 0.5;
+    }
+    return LayoutBuilder(builder: (context, constraints) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: constraints.maxWidth,
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: voted ? FontWeight.bold : null,
+            ),
+          ),
+          SizedBox(
+            height: 4,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius4,
+                  color: voted ? SkyColors.follow : Color(0xff73BF71),
+                ),
+                width: (constraints.maxWidth - 66) * rate,
+                height: 24,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  '${(rate * 100).round()}%',
+                  style: TextStyle(
+                    color: SkyColors.follow,
+                  ),
+                ),
+              ),
+              if (voted)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2.0),
+                  child: Icon(
+                    UniconsLine.checkCircle,
+                    color: SkyColors.follow,
+                    size: 20,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      );
+    });
   }
 }
