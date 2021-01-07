@@ -977,6 +977,7 @@ class _PostWidgetState extends State<PostWidget> {
                                       key,
                                       data[key].length,
                                       data[key].contains(AppState.userId),
+                                      userIds: data[key],
                                       onAdd: () {
                                         //print('onAdd $key');
                                         dp.addReaction(fullPostId, key);

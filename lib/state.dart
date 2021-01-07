@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:app/model/user.dart';
 import 'package:skynet/skynet.dart';
 
 class AppState {

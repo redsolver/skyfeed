@@ -1,11 +1,12 @@
 import 'package:app/data.dart';
+import 'package:app/model/user.dart';
 import 'package:hive/hive.dart';
 import 'package:skynet/skynet.dart';
 
 LazyBox cacheBox;
 Box revisionCache;
 
-Box users;
+Box<User> users;
 
 LazyBox followingBox;
 LazyBox followersBox;

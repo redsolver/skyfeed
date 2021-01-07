@@ -779,7 +779,7 @@ class _HomePageState extends State<HomePage> {
                       AuthService.logout();
                     }
                   },
-                  offset: Offset(0, 96),
+                  //offset: Offset(0, 96),
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       child: Text('Edit profile'),
@@ -805,7 +805,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     PopupMenuItem(
                         child: Text(
-                      'Version Beta 0.5.1',
+                      'Version Beta 0.5.3',
                       style: TextStyle(
                         fontStyle: FontStyle.italic,
                       ),
