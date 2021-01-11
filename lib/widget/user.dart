@@ -56,6 +56,7 @@ class UserWidget extends StatelessWidget {
                       ),
                       width: height,
                       height: height,
+                      fit: BoxFit.cover,
                     ),
                   ),
                   SizedBox(

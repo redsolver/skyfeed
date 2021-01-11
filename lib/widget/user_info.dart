@@ -58,6 +58,7 @@ class _UserInfoWidgetState extends State<UserInfoWidget> {
                                 ),
                                 width: 64,
                                 height: 64,
+                                fit: BoxFit.cover,
                               ),
                             ),
                             SizedBox(
@@ -238,7 +239,7 @@ class _UserInfoWidgetState extends State<UserInfoWidget> {
                                     });
                                     await dp.follow(userId);
 
-                                  /*   dp.log(
+                                    /*   dp.log(
                                         'following', dp.following.toString()); */
 
                                     if (mounted)

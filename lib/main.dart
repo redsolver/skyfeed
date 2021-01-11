@@ -805,7 +805,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     PopupMenuItem(
                         child: Text(
-                      'Version Beta 0.5.3',
+                      'Version Beta 0.5.4',
                       style: TextStyle(
                         fontStyle: FontStyle.italic,
                       ),
@@ -833,6 +833,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                               width: 40,
                               height: 40,
+                              fit: BoxFit.cover,
                             );
                           },
                         ),
@@ -860,153 +861,174 @@ class _HomePageState extends State<HomePage> {
             child: (_mobilePageIndex == 0 ||
                     _mobilePageIndex == 1 ||
                     !rd.isMobile)
-                ? Row(
-                    mainAxisAlignment: width > tabletBreakpoint
-                        ? MainAxisAlignment.center
-                        : MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ? Stack(
+                    fit: StackFit.expand,
                     children: [
-                      if (!rd.isMobile) ...[
-                        SizedBox(
-                          width: 332,
-                          child: ListView(
-                            padding: const EdgeInsets.only(
-                              left: 32,
-                              top: 32,
-                              bottom: 32,
-                            ),
-                            children: [
-                              if (rd.selectedUserId != null) ...[
-                                ContextPage(),
-                                SizedBox(
-                                  height: 32,
-                                ),
-                              ],
-                              if (AppState.isLoggedIn) ...[
-                                NavigationItem(
-                                  onTap: () {
-                                    rd.setHomePage();
-                                  },
-                                  icon: UniconsLine.estate,
-                                  label: 'Overview',
-                                  color: SkyColors.follow,
-                                ),
-                                SizedBox(
-                                  height: 16,
-                                ),
-                                StreamBuilder(
-                                  stream: dp.onNotificationsChange.stream,
-                                  builder: (context, snapshot) {
-                                    final notificationsCount =
-                                        dp.getNotificationsCount();
-
-                                    return NavigationItem(
-                                      onTap: () {
-                                        rd.setNotificationsPage();
-                                      },
-                                      icon: UniconsLine.bell,
-                                      label: 'Notifications',
-                                      color: SkyColors.red,
-                                      notificationCount: notificationsCount,
-                                    );
-                                  },
-                                ),
-                                SizedBox(
-                                  height: 16,
-                                ),
-                                NavigationItem(
-                                  onTap: () {
-                                    rd.setUserId(AppState.userId);
-                                  },
-                                  icon: UniconsLine.user,
-                                  label: 'My profile',
-                                  color: SkyColors.red,
-                                ),
-                                SizedBox(
-                                  height: 32,
-                                ),
-                              ],
-                              // NotificationsWidget(),
-                              if (width <= tabletBreakpoint) ...[
-                                /* SizedBox(
-                                  height: 32,
-                                ), */
-                                ChatWidget(),
-                                SizedBox(
-                                  height: 32,
-                                ),
-                                DiscoverWidget(),
-                              ]
-                            ],
-                          ),
-                        ),
-                      ],
-                      Flexible(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
+                      (rd.isNotificationsPage || _mobilePageIndex == 1)
+                          ? FeedPage(
+                              null,
+                              null,
                               maxWidth: rd.isMobile
                                   ? 1000
-                                  : (useBigFeedPadding ? 748 : 684)),
-                          child: (rd.isNotificationsPage ||
-                                  _mobilePageIndex == 1)
-                              ? FeedPage(
-                                  null,
-                                  null,
-                                  isNotificationsPage: true,
-                                  sidePadding: rd.isMobile
-                                      ? 0
-                                      : useBigFeedPadding
-                                          ? 64
-                                          : 32,
-                                  key: ValueKey(
-                                    'page-notifications',
-                                  ),
-                                  showBackButton: true,
-                                )
-                              : FeedPage(
-                                  rd.isMobile ? null : rd.selectedUserId,
-                                  rd.isMobile ? null : rd.selectedPostId,
-                                  sidePadding: rd.isMobile
-                                      ? 0
-                                      : useBigFeedPadding
-                                          ? 64
-                                          : 32,
-                                  key: ValueKey(
-                                    rd.isMobile
-                                        ? null
-                                        : rd.currentConfiguration.isHomePage
-                                            ? null
-                                            : rd.currentConfiguration.isUserPage
-                                                ? rd.selectedUserId
-                                                : rd.selectedUserId +
-                                                    rd.selectedPostId,
-                                  ),
-                                  showBackButton:
-                                      rd.currentConfiguration.isHomePage
-                                          ? false
-                                          : true,
-                                ),
-                        ),
-                      ),
-                      if (width > tabletBreakpoint) ...[
-                        SizedBox(
-                          width: 332,
-                          child: ListView(
-                            padding: const EdgeInsets.only(
-                              top: 32,
-                              bottom: 32,
-                              right: 32,
-                            ),
-                            children: [
-                              ChatWidget(),
-                              SizedBox(
-                                height: 32,
+                                  : (useBigFeedPadding ? 748 : 684),
+                              isNotificationsPage: true,
+                              sidePadding: rd.isMobile
+                                  ? 0
+                                  : useBigFeedPadding
+                                      ? 64
+                                      : 32,
+                              center: width > tabletBreakpoint,
+                              key: ValueKey(
+                                'page-notifications',
                               ),
-                              DiscoverWidget(),
+                              showBackButton: true,
+                            )
+                          : FeedPage(
+                              rd.isMobile ? null : rd.selectedUserId,
+                              rd.isMobile ? null : rd.selectedPostId,
+                              maxWidth: rd.isMobile
+                                  ? 1000
+                                  : (useBigFeedPadding ? 748 : 684),
+                              center: width > tabletBreakpoint,
+                              sidePadding: rd.isMobile
+                                  ? 0
+                                  : useBigFeedPadding
+                                      ? 64
+                                      : 32,
+                              key: ValueKey(
+                                rd.isMobile
+                                    ? null
+                                    : rd.currentConfiguration.isHomePage
+                                        ? null
+                                        : rd.currentConfiguration.isUserPage
+                                            ? rd.selectedUserId
+                                            : rd.selectedUserId +
+                                                rd.selectedPostId,
+                              ),
+                              showBackButton: rd.currentConfiguration.isHomePage
+                                  ? false
+                                  : true,
+                            ),
+                      if (!rd.isMobile)
+                        Row(
+                          mainAxisAlignment: width > tabletBreakpoint
+                              ? MainAxisAlignment.center
+                              : MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!rd.isMobile) ...[
+                              SizedBox(
+                                width: 332,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 32,
+                                    top: 32,
+                                    bottom: 32,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (rd.selectedUserId != null) ...[
+                                        ContextPage(),
+                                        SizedBox(
+                                          height: 32,
+                                        ),
+                                      ],
+                                      if (AppState.isLoggedIn) ...[
+                                        NavigationItem(
+                                          onTap: () {
+                                            rd.setHomePage();
+                                          },
+                                          icon: UniconsLine.estate,
+                                          label: 'Overview',
+                                          color: SkyColors.follow,
+                                        ),
+                                        SizedBox(
+                                          height: 16,
+                                        ),
+                                        StreamBuilder(
+                                          stream:
+                                              dp.onNotificationsChange.stream,
+                                          builder: (context, snapshot) {
+                                            final notificationsCount =
+                                                dp.getNotificationsCount();
+
+                                            return NavigationItem(
+                                              onTap: () {
+                                                rd.setNotificationsPage();
+                                              },
+                                              icon: UniconsLine.bell,
+                                              label: 'Notifications',
+                                              color: SkyColors.red,
+                                              notificationCount:
+                                                  notificationsCount,
+                                            );
+                                          },
+                                        ),
+                                        SizedBox(
+                                          height: 16,
+                                        ),
+                                        NavigationItem(
+                                          onTap: () {
+                                            rd.setUserId(AppState.userId);
+                                          },
+                                          icon: UniconsLine.user,
+                                          label: 'My profile',
+                                          color: SkyColors.red,
+                                        ),
+                                        SizedBox(
+                                          height: 32,
+                                        ),
+                                      ],
+                                      // NotificationsWidget(),
+                                      if (width <= tabletBreakpoint) ...[
+                                        /* SizedBox(
+                                        height: 32,
+                                      ), */
+                                        ChatWidget(),
+                                        SizedBox(
+                                          height: 32,
+                                        ),
+                                        DiscoverWidget(),
+                                      ]
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
-                          ),
+                            Flexible(
+                              child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                      maxWidth: rd.isMobile
+                                          ? 1000
+                                          : (useBigFeedPadding ? 748 : 684)),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                  )),
+                            ),
+                            if (width > tabletBreakpoint) ...[
+                              SizedBox(
+                                width: 332,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 32,
+                                    bottom: 32,
+                                    right: 32,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      ChatWidget(),
+                                      SizedBox(
+                                        height: 32,
+                                      ),
+                                      DiscoverWidget(),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
                     ],
                   )
                 : _mobilePageIndex == 2

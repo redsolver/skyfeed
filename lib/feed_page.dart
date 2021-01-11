@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:app/app.dart';
 import 'package:app/main.dart';
@@ -19,12 +20,18 @@ class FeedPage extends StatefulWidget {
   final double sidePadding;
   final bool isNotificationsPage;
 
+  final double maxWidth;
+
+  final bool center;
+
   FeedPage(
     this.userId,
     this.postId, {
     this.isNotificationsPage = false,
     this.showBackButton = false,
     this.sidePadding = 0,
+    this.maxWidth,
+    this.center = true,
     Key key,
   }) : super(key: key);
 
@@ -355,17 +362,39 @@ class _FeedPageState extends State<FeedPage> {
 
     print('[build] FeedPage ${widget.userId}');
 
+    final freeSpace = MediaQuery.of(context).size.width;
+
+    final remainingSpacing = freeSpace - (widget.maxWidth ?? 0);
+
+    double leftSpacing =
+        widget.center ? remainingSpacing / 2 : widget.sidePadding + 332;
+
+    double rightSpacing = widget.center
+        ? remainingSpacing / 2
+        : max(remainingSpacing - leftSpacing, 0);
+
+    if (leftSpacing < widget.sidePadding + 332) {
+      leftSpacing = widget.sidePadding + 332;
+    }
+
+    if (widget.center && rightSpacing < widget.sidePadding + 332) {
+      rightSpacing = widget.sidePadding + 332;
+    }
+
     return RawKeyboardListener(
       focusNode: _focusNode,
       autofocus: true,
       onKey: _handleKeyEvent,
       child: ScrollablePositionedList.separated(
         // key: PageStorageKey('list-${widget.userId}-${widget.postId}'),
-        padding: EdgeInsets.only(
-          top: (isMobile || widget.showBackButton) ? 0 : 32,
-          left: widget.sidePadding,
-          right: widget.sidePadding,
-        ),
+        padding: isMobile
+            ? null
+            : EdgeInsets.only(
+                top: (isMobile || widget.showBackButton) ? 0 : 32,
+                left: leftSpacing + widget.sidePadding,
+                right: rightSpacing + widget.sidePadding //widget.sidePadding,
+                ),
+
         itemScrollController: itemScrollController,
         itemPositionsListener: itemPositionsListener,
         // controller: _controller,

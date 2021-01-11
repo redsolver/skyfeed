@@ -224,6 +224,7 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
                     ),
                     width: 48,
                     height: 48,
+                    fit: BoxFit.cover,
                   );
                 },
               ),
