@@ -67,8 +67,17 @@ class _PostWidgetState extends State<PostWidget> {
     if (post.content != null && post.content.link == null) {
       // print('trying to extract link...');
       post.content.link = RegExp(
-              r"((((H|h)(T|t)|(F|f))(T|t)(P|p)((S|s)?))\://)?(www.|[a-zA-Z0-9].)[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\:[0-9]{1,5})*(/($|[a-zA-Z0-9\.\,\;\?\'\\\+&amp;%\$#\=~_\-@]+))*")
+              r"((((H|h)(T|t)|(F|f))(T|t)(P|p)((S|s)?))\:\/\/)?(www.|[a-zA-Z0-9])[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\:[0-9]{1,5})*(\/($|[a-zA-Z0-9\.\,\;\?\'\\\+&amp;%\$#\=~_\-@]+))*")
           .stringMatch(post.content.text ?? '');
+
+      if (post.content.link != null) {
+        if (!(post.content.link.startsWith('https://') ||
+            post.content.link.startsWith('http://'))) {
+          post.content.link = 'https://' + post.content.link;
+        }
+      }
+
+      // print('HEY ${post.content.link}');
     }
 
     // print('[init] PostWidget ${fullPostId}');
@@ -223,13 +232,15 @@ class _PostWidgetState extends State<PostWidget> {
                 context,
               ),
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            'This post has been deleted',
-            style: TextStyle(
-              fontStyle: FontStyle.italic,
-              color: SkyColors.red,
-              fontWeight: FontWeight.bold,
+          padding: const EdgeInsets.all(16.0),
+          child: Center(
+            child: Text(
+              'This post has been deleted',
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+                color: SkyColors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
@@ -507,7 +518,7 @@ class _PostWidgetState extends State<PostWidget> {
                           Padding(
                             padding: EdgeInsets.only(
                               left: leftContentIndent, // 24
-                              right: 40,
+                              right: 8.0,
                               top: 8.0,
                             ),
                             child: /* post.content.text.contains('#_markdown') */

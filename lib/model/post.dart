@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -153,6 +155,9 @@ class PostContent {
 
   @HiveField(19)
   Map<String, String> pollOptions;
+
+  @JsonKey(ignore: true)
+  Uint8List bytes;
 
   PostContent();
 

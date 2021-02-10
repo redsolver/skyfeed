@@ -14,6 +14,7 @@ import 'package:hive/hive.dart';
 import 'package:skynet/skynet.dart';
 
 import 'package:app/utils/string.dart';
+import 'package:tuple/tuple.dart';
 
 // Every second in Data map
 // Every minute on SkyDB (when changes)
@@ -33,6 +34,9 @@ const $skyfeedUser = 'skyfeed-user';
 
 const $skyfeedRequestFollow = 'skyfeed-req-follow-';
 const $skyfeedRequestMention = 'skyfeed-req-mention-';
+
+const $skyfeedNotificationsFollow = 'skyfeed-notifications-follow';
+const $skyfeedNotificationsMention = 'skyfeed-notifications-mention';
 
 class DataProcesser {
   Future<void> init() async {
@@ -89,13 +93,21 @@ class DataProcesser {
 
     print('main() 5 ${DateTime.now()}');
 
-    final cRequestFollow = await cacheBox.get('requestFollow');
+/*     final cRequestFollow = await cacheBox.get('requestFollow');
     if (cRequestFollow != null)
       dp.requestFollow = cRequestFollow.cast<String, Map>();
 
     final cRequestMention = await cacheBox.get('requestMention');
     if (cRequestMention != null)
-      dp.requestMention = cRequestMention.cast<String, Map>();
+      dp.requestMention = cRequestMention.cast<String, Map>(); */
+
+    final cNotificationsFollow = await cacheBox.get('notificationsFollow');
+    if (cNotificationsFollow != null)
+      dp.notificationsFollow = cNotificationsFollow.cast<String, Map>();
+
+    final cNotificationsMention = await cacheBox.get('notificationsMention');
+    if (cNotificationsMention != null)
+      dp.notificationsMention = cNotificationsMention.cast<String, Map>();
 
     final cReactions = await cacheBox.get('reactions');
     //print('cReactions $cReactions');
@@ -122,7 +134,7 @@ class DataProcesser {
   // Map<String, ItemPosition> scrollCache = {};
 
   log(String path, String msg) {
-    if (kDebugMode) print('$path $msg');
+    // if (kDebugMode) print('$path $msg');
   }
 
   Map<String, StreamSubscription> _subbedProfilesInternal = {};
@@ -131,8 +143,12 @@ class DataProcesser {
   final onNotificationsChange = StreamController<Null>.broadcast();
 
   // Requests
-  Map<String, Map> requestFollow = {};
-  Map<String, Map> requestMention = {};
+  Map<String, Map> _requestFollow = {};
+  Map<String, Map> _requestMention = {};
+
+  // Notifications
+  Map<String, Map> notificationsFollow = {};
+  Map<String, Map> notificationsMention = {};
 
   // RT
   Map<String, StreamController<User>> subbedProfiles = {};
@@ -224,11 +240,16 @@ class DataProcesser {
     );
   }
 
-  Future<Set<String>> getSuggestedUsers() async {
-    final tmpSuggestions = <String>{
-      'd448f1562c20dbafa42badd9f88560cd1adb2f177b30f0aa048cb243e55d37bd', // redsolver
-      '70a3fffccae8618b12f8878f94f118350717e363b143f1d5d8df787ffb1c9ae7', // Julian
-      '8126964b3bf6444862610b8da523189fe749c4d4fa8047dddb0f2ff33f65cbc3', // Skynet Labs
+  Future<List<String>> getSuggestedUsers() async {
+    final tmpSuggestionsMap = <String, int>{
+      'b114531ddb46d1446806a5f4334729dac0149665893383d4dcba692cfa51f2dc':
+          1, // SkyFeed Official
+      'd448f1562c20dbafa42badd9f88560cd1adb2f177b30f0aa048cb243e55d37bd':
+          1, // redsolver
+      '70a3fffccae8618b12f8878f94f118350717e363b143f1d5d8df787ffb1c9ae7':
+          1, // Julian
+      '8126964b3bf6444862610b8da523189fe749c4d4fa8047dddb0f2ff33f65cbc3':
+          1, // Skynet Labs
     };
 
     for (final mainUserId in getFollowKeys()) {
@@ -239,13 +260,24 @@ class DataProcesser {
           '')) {
         
       } */
-      tmpSuggestions.addAll(flw.keys.cast<String>());
+
+      for (final key in flw.keys) {
+        tmpSuggestionsMap[key] = (tmpSuggestionsMap[key] ?? 0) + 1;
+      }
+      // tmpSuggestions.addAll(flw.keys.cast<String>());
     }
 
-    tmpSuggestions.removeWhere(
-        (element) => dp.isFollowingUserPubliclyOrPrivately(element));
+    final list = <Tuple2<String, int>>[];
 
-    return tmpSuggestions;
+    for (final key in tmpSuggestionsMap.keys) {
+      if (!dp.isFollowingUserPubliclyOrPrivately(key)) {
+        list.add(Tuple2(key, tmpSuggestionsMap[key]));
+      }
+    }
+
+    list.sort((a, b) => -a.item2.compareTo(b.item2));
+
+    return list.map<String>((e) => e.item1).toList();
   }
 
   bool isSaved(String postId) {
@@ -1026,24 +1058,39 @@ class DataProcesser {
         .listen((event) async {
       print('got skyfeedRequestFollow');
 
-      if (checkRevisionNumberCache(
+/*       if (checkRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedRequestFollow,
-          event.entry.revision)) return;
+          event.entry.revision)) return; */
 
       final res = await ws.downloadFileFromRegistryEntry(event);
 
       final val = json.decode(res.asString).cast<String, Map>();
 
-      if (val == null) {
+      if (val == null || val is! Map) {
         print('null value!');
         return;
       }
+      // requestFollow = val;
 
-      requestFollow = val;
+      for (final key in val.keys) {
+        notificationsFollow[key] = val[key];
+      }
 
-      cacheBox.put('requestFollow', requestFollow);
+      if (val.isNotEmpty) {
+        // print('setAll2');
+        await setNotificationsFollowFile();
+        await ws.setFile(
+          AppState.publicUser,
+          $skyfeedRequestFollow + AppState.userId,
+          SkyFile(
+            content: utf8.encode(json.encode({})),
+            filename: 'skyfeed.json',
+            type: 'application/json',
+          ),
+        );
+      }
 
-      onNotificationsChange.add(null);
+      // cacheBox.put('requestFollow', requestFollow);
 
       setRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedRequestFollow,
@@ -1056,24 +1103,36 @@ class DataProcesser {
         .listen((event) async {
       print('got skyfeedRequestMention');
 
-      if (checkRevisionNumberCache(
+/*       if (checkRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedRequestMention,
-          event.entry.revision)) return;
+          event.entry.revision)) return; */
 
       final res = await ws.downloadFileFromRegistryEntry(event);
 
       final val = json.decode(res.asString).cast<String, Map>();
 
-      if (val == null) {
+      if (val == null || val is! Map) {
         print('null value!');
         return;
       }
 
-      requestMention = val;
+      for (final key in val.keys) {
+        notificationsMention[key] = val[key];
+      }
 
-      cacheBox.put('requestMention', requestMention);
-
-      onNotificationsChange.add(null);
+      if (val.isNotEmpty) {
+        // print('setAll');
+        await setNotificationsMentionFile();
+        await ws.setFile(
+          AppState.publicUser,
+          $skyfeedRequestMention + AppState.userId,
+          SkyFile(
+            content: utf8.encode(json.encode({})),
+            filename: 'skyfeed.json',
+            type: 'application/json',
+          ),
+        );
+      }
 
       setRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedRequestMention,
@@ -1127,25 +1186,63 @@ class DataProcesser {
 
     ws.subscribe(AppState.skynetUser, $skyfeedSaved).listen((event) async {
       print('got skyfeedSaved');
-
       if (checkRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedSaved, event.entry.revision))
         return;
 
       final encryptedRes = await ws.downloadFileFromRegistryEntry(event);
-
       final decrypted = AppState.skynetUser
           .symDecrypt(AppState.skynetUser.sk, encryptedRes.content);
-
       saved = json.decode(utf8.decode(decrypted)).cast<String, Map>();
-      /*   print('oldFollowing $oldFollowing');
-      print('following $following'); */
-
       await cacheBox.put('saved', saved);
-
       setRevisionNumberCache(
           AppState.skynetUser.id + '#' + $skyfeedSaved, event.entry.revision);
     });
+
+    ws
+        .subscribe(AppState.skynetUser, $skyfeedNotificationsFollow)
+        .listen((event) async {
+      print('got skyfeedNotificationsFollow');
+      if (checkRevisionNumberCache(
+          AppState.skynetUser.id + '#' + $skyfeedNotificationsFollow,
+          event.entry.revision)) return;
+
+      final encryptedRes = await ws.downloadFileFromRegistryEntry(event);
+      final decrypted = AppState.skynetUser
+          .symDecrypt(AppState.skynetUser.sk, encryptedRes.content);
+      notificationsFollow =
+          json.decode(utf8.decode(decrypted)).cast<String, Map>();
+      await cacheBox.put('notificationsFollow', notificationsFollow);
+
+      onNotificationsChange.add(null);
+
+      setRevisionNumberCache(
+          AppState.skynetUser.id + '#' + $skyfeedNotificationsFollow,
+          event.entry.revision);
+    });
+
+    ws
+        .subscribe(AppState.skynetUser, $skyfeedNotificationsMention)
+        .listen((event) async {
+      print('got skyfeedNotificationsMention');
+      if (checkRevisionNumberCache(
+          AppState.skynetUser.id + '#' + $skyfeedNotificationsMention,
+          event.entry.revision)) return;
+
+      final encryptedRes = await ws.downloadFileFromRegistryEntry(event);
+      final decrypted = AppState.skynetUser
+          .symDecrypt(AppState.skynetUser.sk, encryptedRes.content);
+      notificationsMention =
+          json.decode(utf8.decode(decrypted)).cast<String, Map>();
+      await cacheBox.put('notificationsMention', notificationsMention);
+
+      onNotificationsChange.add(null);
+
+      setRevisionNumberCache(
+          AppState.skynetUser.id + '#' + $skyfeedNotificationsMention,
+          event.entry.revision);
+    });
+
     ws
         .subscribe(AppState.skynetUser, $skyfeedMediaPositions)
         .listen((event) async {
@@ -1206,6 +1303,10 @@ class DataProcesser {
 
   Future<void> addUserToFollowers(String userId) async {
     followers[userId] = {};
+    await setFollowersFile();
+  }
+
+  Future<void> setFollowersFile() async {
     await _setFile(
       utf8.encode(json.encode(followers)),
       $skyfeedFollowers,
@@ -1283,9 +1384,13 @@ class DataProcesser {
     );
   }
 
-  Future<void> removeUserFromPublicRequestFollow(String userId) async {
-    requestFollow.remove(userId);
+  Future<void> removeUserFromFollowNotifications(String userId) async {
+    notificationsFollow.remove(userId);
 
+    setNotificationsFollowFileDelayed();
+  }
+
+/*   Future<void> setOwnRequestFollowFile() async {
     await ws.setFile(
       AppState.publicUser,
       $skyfeedRequestFollow + AppState.userId,
@@ -1295,7 +1400,7 @@ class DataProcesser {
         type: 'application/json',
       ),
     );
-  }
+  } */
 
   Future<void> unfollow(String userId) => _unfollow(userId, following);
 
@@ -1416,6 +1521,54 @@ class DataProcesser {
       ),
       revision: revision,
     );
+  }
+
+  Future<void> setNotificationsFollowFile() async {
+    final payload = utf8.encode(json.encode(notificationsFollow));
+    final r = await _setEncryptedFile(
+      payload,
+      $skyfeedNotificationsFollow,
+    );
+    if (!r) {
+      throw Exception('Could not set SkyDB file');
+    }
+  }
+
+  int _currentFollowNotificationsPendingUpdateIndex = 0;
+
+  Future<void> setNotificationsFollowFileDelayed() async {
+    _currentFollowNotificationsPendingUpdateIndex++;
+    final cCount = _currentFollowNotificationsPendingUpdateIndex;
+
+    await Future.delayed(Duration(seconds: 5));
+    if (cCount != _currentFollowNotificationsPendingUpdateIndex) return;
+
+    setNotificationsFollowFile();
+  }
+
+  Future<void> setNotificationsMentionFile() async {
+    log('setNotificationsMentionFile', '');
+
+    final payload = utf8.encode(json.encode(notificationsMention));
+    final r = await _setEncryptedFile(
+      payload,
+      $skyfeedNotificationsMention,
+    );
+    if (!r) {
+      throw Exception('Could not set SkyDB file');
+    }
+  }
+
+  int _currentMentionNotificationsUpdateCount = 0;
+
+  Future<void> setNotificationsMentionFileDelayed() async {
+    _currentMentionNotificationsUpdateCount++;
+    final cCount = _currentMentionNotificationsUpdateCount;
+
+    await Future.delayed(Duration(seconds: 5));
+    if (cCount != _currentMentionNotificationsUpdateCount) return;
+
+    setNotificationsMentionFile();
   }
 
   Future<void> savePost(
@@ -1679,6 +1832,6 @@ class DataProcesser {
   }
 
   int getNotificationsCount() {
-    return requestFollow.length + requestMention.length;
+    return notificationsFollow.length + notificationsMention.length;
   }
 }

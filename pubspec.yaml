@@ -15,7 +15,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 0.5.4+504
+version: 0.6.0+600
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
@@ -47,7 +47,8 @@ dependencies:
   emoji_pick: ^0.1.0
 
   skynet:
-    git: https://github.com/redsolver/skynet.git
+    path: ../skynet
+  #    git: https://github.com/redsolver/skynet.git
   mime: ^0.9.7
   image: ^2.1.18
   cryptography: ^1.4.1
@@ -55,6 +56,8 @@ dependencies:
   flutter_spinkit: ^4.1.2+1
   path: ^1.7.0
   regexpattern: ^1.0.0
+  tuple: ^1.0.3
+  qr_flutter: ^3.2.0
 
 dev_dependencies:
   flutter_test:

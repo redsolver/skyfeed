@@ -278,11 +278,11 @@ class _FeedPageState extends State<FeedPage> {
 
     List<Post> tmpPosts = [];
 
-    for (final userId in dp.requestFollow.keys) {
+    for (final userId in dp.notificationsFollow.keys) {
       tmpPosts.add(Post()..followNotificationFor = userId);
     }
 
-    for (final fullPostId in dp.requestMention.keys) {
+    for (final fullPostId in dp.notificationsMention.keys.toList().reversed) {
       tmpPosts.add(Post()..mentionOf = fullPostId);
     }
 
@@ -333,6 +333,8 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
+  bool _isProcessingBatchAction = false;
+
   @override
   Widget build(BuildContext context) {
     if (posts == null)
@@ -357,6 +359,10 @@ class _FeedPageState extends State<FeedPage> {
       if (widget.showBackButton) {
         itemCount++;
       }
+    }
+
+    if (widget.isNotificationsPage) {
+      itemCount++;
     }
     /* itemCount++; */
 
@@ -471,6 +477,70 @@ class _FeedPageState extends State<FeedPage> {
             }
           }
 
+          if (widget.isNotificationsPage) {
+            if (index == 0) {
+              return Row(
+                children: [
+                  Text(
+                    'Notifications',
+                    style: titleTextStyle,
+                  ),
+                  Spacer(),
+                  _isProcessingBatchAction
+                      ? Padding(
+                          padding: const EdgeInsets.all(7.0),
+                          child: SizedBox(
+                            height: 26,
+                            width: 26,
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      : PopupMenuButton<String>(
+                          onSelected: (String result) async {
+                            if (result == 'acceptAll') {
+                              setState(() {
+                                _isProcessingBatchAction = true;
+                              });
+
+                              try {
+                                for (final userId
+                                    in dp.notificationsFollow.keys) {
+                                  dp.followers[userId] = {};
+                                }
+                                await dp.setFollowersFile();
+
+                                dp.notificationsFollow = {};
+
+                                await dp.setNotificationsFollowFile();
+                              } catch (e) {
+                                // TODO Show error
+                              }
+
+                              setState(() {
+                                _isProcessingBatchAction = false;
+                              });
+                            }
+                          },
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'acceptAll',
+                              child: Text('Accept all followers'),
+                            ),
+                          ],
+                        ),
+                  /*  RaisedButton(
+                    child: Text('Accept all'),
+                    onPressed: () async {
+                  
+                    },
+                  ), */
+                ],
+              );
+            }
+            index--;
+          }
+
           final p = posts[index];
 
           if (p.followNotificationFor != null) {
@@ -483,18 +553,59 @@ class _FeedPageState extends State<FeedPage> {
             return FutureBuilder<Post>(
               future: dp.getPost(p.repostOf ?? p.mentionOf),
               builder: (context, snapshot) {
-                if (snapshot.data == null)
-                  return Container(
-                    decoration: getCardDecoration(context),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        'Loading post...',
-                        style: TextStyle(
-                          fontStyle: FontStyle.italic,
+                // TODO Optimize
+
+                final closeNotificationWidget = Align(
+                  alignment: Alignment.topRight,
+                  child: InkWell(
+                    onTap: () async {
+                      dp.notificationsMention.remove(p.mentionOf);
+                      loadNotificationsData();
+
+                      dp.setNotificationsMentionFileDelayed();
+
+                      /* await dp.mention(
+                        p.mentionOf,
+                        AppState.userId,
+                        remove: true,
+                      ); */
+                      //setState(() {});
+                    },
+                    child: Material(
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(4),
+                        topRight: Radius.circular(8),
+                      ),
+                      color: SkyColors.red,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white,
                         ),
                       ),
                     ),
+                  ),
+                );
+
+                if (snapshot.data == null)
+                  return Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        decoration: getCardDecoration(context),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            'Loading post...',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (widget.isNotificationsPage) closeNotificationWidget,
+                    ],
                   );
 
                 print(snapshot.data.commentTo);
@@ -507,32 +618,7 @@ class _FeedPageState extends State<FeedPage> {
                         key: ValueKey(snapshot.data.fullPostId),
                         showMentionContext: true,
                       ),
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: InkWell(
-                          onTap: () async {
-                            await dp.mention(
-                              p.mentionOf,
-                              AppState.userId,
-                              remove: true,
-                            );
-                          },
-                          child: Material(
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(4),
-                              topRight: Radius.circular(8),
-                            ),
-                            color: SkyColors.red,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      closeNotificationWidget,
                     ],
                   );
                 }

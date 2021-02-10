@@ -19,6 +19,7 @@ import 'package:emojis/emoji.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 
 import 'package:mime/mime.dart';
+import 'package:tuple/tuple.dart';
 
 import 'package:video_player/video_player.dart';
 import 'package:skynet/skynet.dart';
@@ -712,14 +713,15 @@ class _CreatePostWidgetState extends State<CreatePostWidget> {
 
                                 try {
                                   final PostContent res = await compute(
-                                      calculateImageStuff, _imageBytes);
+                                      calculateImageStuff,
+                                      Tuple2(_imageBytes, type));
 
                                   print(res.aspectRatio);
 
                                   setInfo('Uploading image...');
 
                                   final skylink = await uploadFile(SkyFile(
-                                    content: _imageBytes,
+                                    content: res.bytes,
                                     filename: file.name,
                                     type: type,
                                   ));

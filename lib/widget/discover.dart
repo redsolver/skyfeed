@@ -36,7 +36,7 @@ class _DiscoverWidgetState extends State<DiscoverWidget> {
     setState(() {});
   }
 
-  Set<String> suggestedUsers = {};
+  List<String> suggestedUsers = [];
 
   @override
   Widget build(BuildContext context) {

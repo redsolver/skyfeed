@@ -51,6 +51,7 @@ class EmojiPopupMenuWidget extends StatelessWidget {
 
                         for (final reacts in dp.reactions.values) {
                           for (final r in reacts) {
+                            if (RegExp(r'^[0-9]+$').hasMatch(r)) continue;
                             usage.putIfAbsent(r, () => 0);
                             usage[r]++;
                           }

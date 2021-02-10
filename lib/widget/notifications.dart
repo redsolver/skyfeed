@@ -107,9 +107,12 @@ class _NotificationUserFollowWidgetState
                 setState(() {
                   _loading = true;
                 });
+
                 await dp.addUserToFollowers(widget.userId);
 
-                await dp.removeUserFromPublicRequestFollow(widget.userId);
+                dp.removeUserFromFollowNotifications(widget.userId);
+
+                dp.onNotificationsChange.add(null);
 
                 setState(() {
                   _loading = null;
@@ -121,7 +124,9 @@ class _NotificationUserFollowWidgetState
                 setState(() {
                   _loading = true;
                 });
-                await dp.removeUserFromPublicRequestFollow(widget.userId);
+                dp.removeUserFromFollowNotifications(widget.userId);
+                dp.onNotificationsChange.add(null);
+
                 setState(() {
                   _loading = null;
                 });

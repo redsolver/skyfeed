@@ -5,6 +5,7 @@ import 'package:app/auth/auth.dart';
 import 'package:app/feed_page.dart';
 import 'package:app/state.dart';
 import 'package:app/utils/theme.dart';
+import 'package:app/widget/auth_dialog.dart';
 import 'package:app/widget/chat.dart';
 import 'package:app/widget/create_post.dart';
 import 'package:app/widget/discover.dart';
@@ -714,7 +715,13 @@ class _HomePageState extends State<HomePage> {
                       label: 'Login',
                       color: SkyColors.follow,
                       onPressed: () async {
+                        /* final AuthResult result = await showDialog(
+                            context: context,
+                            builder: (context) => AuthDialog()); */
+
                         final result = await AuthService.login(context);
+
+                        if (result == null) return;
 
                         if (result.eventCode == 'login_success') {
                           AppState.skynetUser =
@@ -805,7 +812,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     PopupMenuItem(
                         child: Text(
-                      'Version Beta 0.5.4',
+                      'Version Beta 0.6.0',
                       style: TextStyle(
                         fontStyle: FontStyle.italic,
                       ),
@@ -1127,7 +1134,7 @@ class NavigationBar extends StatelessWidget {
           icon: StreamBuilder(
             stream: dp.onFollowingChange.stream,
             builder: (context, snapshot) {
-              return FutureBuilder<Set>(
+              return FutureBuilder<List>(
                 future: dp.getSuggestedUsers(),
                 builder: (context, snapshot) {
                   final suggestionsCount =

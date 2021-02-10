@@ -1,4 +1,4 @@
-import 'package:app/app.dart';
+import 'package:flutter/material.dart';
 
 class SkyButton extends StatelessWidget {
   final String label;
@@ -10,6 +10,10 @@ class SkyButton extends StatelessWidget {
 
   final bool enabled;
 
+  final Widget child;
+
+  final double extraHeight;
+
   SkyButton({
     this.filled = false,
     this.enabled = true,
@@ -17,6 +21,8 @@ class SkyButton extends StatelessWidget {
     this.color,
     this.onPressed,
     this.tooltip,
+    this.child,
+    this.extraHeight = 0.0,
   }) {}
 
   Widget build(BuildContext context) {
@@ -50,13 +56,14 @@ class SkyButton extends StatelessWidget {
               ),
             )),
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          padding: EdgeInsets.all(10.0 + extraHeight / 2),
+          child: child ??
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
         ),
         onPressed: onPressed,
       );
@@ -90,13 +97,14 @@ class SkyButton extends StatelessWidget {
             ),
           )),
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        padding: EdgeInsets.all(10.0 + extraHeight / 2),
+        child: child ??
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
       ),
       onPressed: onPressed,
     );

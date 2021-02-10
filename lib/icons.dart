@@ -53,6 +53,8 @@ class UniconsLine {
   static const IconData plusCircle = IconData(0xe9c1, fontFamily: fontFamily);
 
   static const IconData imageV = IconData(0xea57, fontFamily: fontFamily);
+
+  static const IconData qrcodeScan = IconData(0xec4e, fontFamily: fontFamily);
 }
 
 class UniconsSolid {
