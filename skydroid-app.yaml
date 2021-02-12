@@ -10,10 +10,22 @@ icon: sia://EADS5NDGkOoEiVfxZ9n5NyesEsLqNbTpBvzHt1Lui8K_Dg
 localized:
   en-US:
     description: Decentralized SkyDB-based alternative to Twitter, YouTube and Instagram with a native iOS, Android and web app.
-    whatsNew: Added emoji reactions, new emoji picker and better performance! + new emoji font
+    whatsNew: New notifications system and a lot of bug fixes and optimizations
     summary: Decentralized social network on Skynet
 
 builds:
+  - versionName: 0.6.0
+    versionCode: 600
+    sha256: d180d1243df469217c3f014cd8e8fd23f8560fdc620847117130dd5e2f921f4a
+    apkLink: sia://AAAF7Fdgr0yMZrVfMXBdLkJbN5qEpWDYRse5KhnbRrdChw
+  - versionName: 0.5.6
+    versionCode: 506
+    sha256: 07c49e3f9378955494da4298d0376c289b2c05fca5c7edcaa702a64371aade06
+    apkLink: sia://AAABFf76NG_k3-IdykM0efm-83ksHb54ol6osxeIGLbKSA
+  - versionName: 0.5.4
+    versionCode: 504
+    sha256: 00467ad4aaa5b4d4265004bedbc89d98a3740b4b2cc09aad0bc6a7a53b4cc89b
+    apkLink: sia://AAAOEm4LzfLT_B0sAnqVyGSx1_NNgRUTzDSoRBYrxFsUOg
   - versionName: 0.4.6
     versionCode: 46
     sha256: 4191bea020f6aee05b3ab4f0187cbad8b3eacc6b6e8923c801f434059ffc7cbb
@@ -35,8 +47,8 @@ builds:
     sha256: e76e1f0035f5d7cadce8337cc1ea749c6bb5286104edf7ed696a56ec704b89b1
     apkLink: sia://AADdlz9pG7AQHdsVfShgwUc2pTEgb8KoruoARb8wLzcpyg
 
-currentVersionName: 0.4.6
-currentVersionCode: 46
+currentVersionName: 0.6.0
+currentVersionCode: 600
 
 added: 1606056265301
-lastUpdated: 1608054630795
+lastUpdated: 1612958425475
