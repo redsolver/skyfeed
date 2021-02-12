@@ -5,7 +5,7 @@ import 'package:app/auth/auth.dart';
 import 'package:app/feed_page.dart';
 import 'package:app/state.dart';
 import 'package:app/utils/theme.dart';
-import 'package:app/widget/auth_dialog.dart';
+// import 'package:app/widget/auth_dialog.dart';
 import 'package:app/widget/chat.dart';
 import 'package:app/widget/create_post.dart';
 import 'package:app/widget/discover.dart';

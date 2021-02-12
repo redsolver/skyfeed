@@ -1,7 +1,6 @@
 import 'package:app/app.dart';
 import 'package:app/model/post.dart';
 import 'package:app/state.dart';
-import 'package:app/utils/parse_md.dart';
 import 'package:app/widget/comments.dart';
 import 'package:app/widget/custom_popup_menu.dart';
 import 'package:app/widget/emoji_popup_menu.dart';
