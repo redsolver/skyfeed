@@ -47,8 +47,8 @@ dependencies:
   emoji_pick: ^0.1.0
 
   skynet:
-    path: ../skynet
-  #    git: https://github.com/redsolver/skynet.git
+    #path: ../skynet
+    git: https://github.com/redsolver/skynet.git
   mime: ^0.9.7
   image: ^2.1.18
   cryptography: ^1.4.1
@@ -67,11 +67,11 @@ dev_dependencies:
   json_serializable: ^3.5.0
   flutter_launcher_icons: ^0.8.1
 
-dependency_overrides:
-  video_player:
-    path: ../../cov/plugins/packages/video_player/video_player
-  video_player_web:
-    path: ../../cov/plugins/packages/video_player/video_player_web
+# dependency_overrides:
+#  video_player:
+#    path: ../../cov/plugins/packages/video_player/video_player
+#  video_player_web:
+#    path: ../../cov/plugins/packages/video_player/video_player_web
 
 flutter_icons:
   android: true
