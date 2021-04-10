@@ -58,6 +58,7 @@ dependencies:
   regexpattern: ^1.0.0
   tuple: ^1.0.3
   qr_flutter: ^3.2.0
+  url_strategy: ^0.2.0
 
 dev_dependencies:
   flutter_test:

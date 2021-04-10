@@ -23,6 +23,7 @@ import 'package:flutter/rendering.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:url_strategy/url_strategy.dart';
 
 void main() async {
   // TODO GestureBinding.instance.resamplingEnabled = true;
@@ -64,6 +65,8 @@ void main() async {
   }
 
   print('main() } ${DateTime.now()}');
+
+  setPathUrlStrategy();
 
   runApp(SkyFeedApp());
 }
