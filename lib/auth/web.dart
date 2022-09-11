@@ -109,10 +109,9 @@ WindowBase popupCenter(url, title, w, h) {
 		scrollbars=yes,
 		width=${w / systemZoom}, 
 		height=${h / systemZoom}, 
-		top=${top}, 
-		left=${left}
+		top=$top, 
+		left=$left
 		''');
-
 
   return newWindow;
 }

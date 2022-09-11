@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:app/app.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
@@ -19,7 +18,7 @@ class AuthService {
               content: Text(
                   '1. Open ${resolveSkylink('sia://sky-id.hns/connect.html')} on your computer\n2. Register or login\n3. Click on QR-Code login in the left side bar\n4. Enter "skyfeed" in the text field'),
               actions: [
-                FlatButton(
+                TextButton(
                   child: Text('Ok'),
                   onPressed: Navigator.of(context).pop,
                 ),
@@ -103,7 +102,7 @@ class AuthService {
             seed: seed,
             userId: appData['userId'],
           );
-        } catch (e, st) {
+        } catch (e) {
           print(e);
           Navigator.of(context).pop();
         }

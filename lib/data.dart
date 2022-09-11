@@ -9,7 +9,6 @@ import 'package:app/state.dart';
 import 'package:app/global.dart';
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:skynet/skynet.dart';
 
@@ -619,7 +618,7 @@ class DataProcesser {
 
     final allUserIds = [...getFollowKeys(), ...temporaryKeys];
 
-    dp.log('checkFollowingUpdater', 'checkFollowingUpdater for ${allUserIds}');
+    dp.log('checkFollowingUpdater', 'checkFollowingUpdater for $allUserIds');
 
     for (final mainUserId in allUserIds) {
       // print('checkFollowingUpdater: $mainUserId');
@@ -662,16 +661,15 @@ class DataProcesser {
 
             // currentPostPointer 3
 
-            pointerBox.put('${mainUserId}/feed/posts', currentPostsPointer);
-            pointerBox.put(
-                '${mainUserId}/feed/comments', currentCommentsPointer);
+            pointerBox.put('$mainUserId/feed/posts', currentPostsPointer);
+            pointerBox.put('$mainUserId/feed/comments', currentCommentsPointer);
 
             for (final int feedPageId in [
               currentPostsPointer,
               if (currentPostsPointer > 0) currentPostsPointer - 1
             ]) {
               subToPage(
-                fullFeedPageId: 'posts/${feedPageId}',
+                fullFeedPageId: 'posts/$feedPageId',
                 skyfeedUser: user,
                 mainUserId: mainUserId,
               );
@@ -682,7 +680,7 @@ class DataProcesser {
               if (currentCommentsPointer > 0) currentCommentsPointer - 1
             ]) {
               subToPage(
-                fullFeedPageId: 'comments/${feedPageId}',
+                fullFeedPageId: 'comments/$feedPageId',
                 skyfeedUser: user,
                 mainUserId: mainUserId,
               );
@@ -838,7 +836,7 @@ class DataProcesser {
       yield await getCommentCount(fullPostId, 0);
     }
 
-    await for (final _ in dp.getFeedStream(key: 'comments/${fullPostId}')) {
+    await for (final _ in dp.getFeedStream(key: 'comments/$fullPostId')) {
       yield await getCommentCount(fullPostId, 0);
     }
   }
@@ -854,7 +852,7 @@ class DataProcesser {
     // reactions/d73c16c364606a83fd93777ad74b21cd32ca11729c8573fe6654973a8308d56c/feed/posts/1/0
     // reactions/d73c16c364606a83fd93777ad74b21cd32ca11729c8573fe6654973a8308d56c/feed/posts/1/0
 
-    await for (final _ in dp.getFeedStream(key: 'reactions/${fullPostId}')) {
+    await for (final _ in dp.getFeedStream(key: 'reactions/$fullPostId')) {
       log('stream/reactions', 'got new event');
       yield await getReactions(fullPostId);
     }
@@ -967,9 +965,9 @@ class DataProcesser {
           }
         }
 
-        await feedPages.put('${mainUserId}/feed/$fullFeedPageId', feed);
+        await feedPages.put('$mainUserId/feed/$fullFeedPageId', feed);
 
-        final feedKey = '${mainUserId}/feed/$feedId';
+        final feedKey = '$mainUserId/feed/$feedId';
 
         if (feedStreams.containsKey(feedKey)) {
           feedStreams[feedKey].add(null);
@@ -993,7 +991,7 @@ class DataProcesser {
   }
 
   Stream<Null> getFeedStream({String userId, String key}) {
-    if (key == null) key = '${userId}/feed/posts';
+    if (key == null) key = '$userId/feed/posts';
 
     if (!feedStreams.containsKey(key)) {
       feedStreams[key] = StreamController<Null>.broadcast();

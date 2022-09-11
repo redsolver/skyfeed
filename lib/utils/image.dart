@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:app/model/post.dart';
 import 'package:blurhash_dart/blurhash_dart.dart';
 import 'package:image/image.dart' as img;
+// ignore: implementation_imports
 import 'package:image/src/exif_data.dart' as exif;
 import 'package:tuple/tuple.dart';
 

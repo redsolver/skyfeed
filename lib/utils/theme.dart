@@ -35,7 +35,7 @@ ThemeData buildThemeData(BuildContext context, String theme) {
   return ThemeData(
       visualDensity: VisualDensity.adaptivePlatformDensity,
       brightness: dark ? Brightness.dark : Brightness.light,
-      primaryColorBrightness: dark ? Brightness.dark : Brightness.light,
+      // primaryColorBrightness: dark ? Brightness.dark : Brightness.light,
       // This is the theme of your application.
       //
       // Try running your application with "flutter run". You'll see the

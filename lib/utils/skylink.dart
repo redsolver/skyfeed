@@ -1,4 +1,3 @@
-
 import 'package:skynet/skynet.dart';
 
 String resolveSkylink(String link, {bool trusted = false}) {

@@ -23,7 +23,7 @@ class SkyButton extends StatelessWidget {
     this.tooltip,
     this.child,
     this.extraHeight = 0.0,
-  }) {}
+  });
 
   Widget build(BuildContext context) {
     if (filled) {

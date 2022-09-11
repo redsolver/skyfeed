@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:app/app.dart';
 import 'package:app/widget/user.dart';
 

@@ -4,12 +4,9 @@ export 'package:app/icons.dart';
 
 import 'dart:async';
 
-import 'package:app/data.dart';
 import 'package:app/main.dart';
 import 'package:app/state.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:skynet/skynet.dart';
 
 import 'global.dart';
 import 'model/user.dart';

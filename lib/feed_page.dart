@@ -234,14 +234,13 @@ class _FeedPageState extends State<FeedPage> {
     List<Post> tmpPosts = [];
 
     Future<void> loadUser(String userId) async {
-      final int currentPostsPointer =
-          pointerBox.get('${userId}/feed/posts') ?? 0;
+      final int currentPostsPointer = pointerBox.get('$userId/feed/posts') ?? 0;
 
       for (int i = currentPostsPointer; i > currentPostsPointer - 2; i--) {
         if (i < 0) continue;
 
         dp.log('feed/home/loadFeed', '$userId/feed/posts/$i');
-        final Feed fp = await feedPages.get('${userId}/feed/posts/$i');
+        final Feed fp = await feedPages.get('$userId/feed/posts/$i');
 
         if (fp != null) {
           fp.items.forEach((p) {

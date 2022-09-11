@@ -10,12 +10,9 @@ import 'package:app/widget/video/play_button.dart';
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:regexpattern/regexpattern.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';

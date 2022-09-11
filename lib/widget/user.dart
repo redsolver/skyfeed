@@ -1,6 +1,4 @@
 import 'package:app/app.dart';
-import 'package:app/model/user.dart';
-import 'package:app/state.dart';
 
 class UserWidget extends StatelessWidget {
   final String userId;

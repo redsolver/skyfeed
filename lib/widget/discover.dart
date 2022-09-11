@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:app/app.dart';
-import 'package:app/state.dart';
 import 'package:app/widget/user.dart';
 
 class DiscoverWidget extends StatefulWidget {

@@ -9,13 +9,10 @@ import 'package:app/utils/image.dart';
 import 'package:app/widget/sky_button.dart';
 import 'package:app/widget/video/play_button.dart';
 
-import 'package:blurhash_dart/blurhash_dart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_link_preview/flutter_link_preview.dart';
-import 'package:image/image.dart' as img;
 
-import 'package:emojis/emoji.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 
 import 'package:mime/mime.dart';
