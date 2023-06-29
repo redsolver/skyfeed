@@ -1,3 +1,5 @@
+> This version of SkyFeed is deprecated, from 2020 and was using the Sia Skynet network. A new version of SkyFeed powered by ATProto/Bluesky can be found here: https://github.com/skyfeed-dev
+
 # SkyFeed
 
 SkyFeed is a decentralized SkyDB-based alternative to Twitter, YouTube and Instagram with a native Android, web and (soon) iOS app.
